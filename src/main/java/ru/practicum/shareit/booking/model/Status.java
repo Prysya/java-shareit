@@ -3,7 +3,7 @@ package ru.practicum.shareit.booking.model;
 /**
  * Статус бронирования
  */
-enum Status {
+public enum Status {
     /**
      * новое бронирование, ожидает одобрения
      */
