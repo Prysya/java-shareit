@@ -27,8 +27,10 @@ public class UserDTO {
     @Size(groups = {Update.class, New.class}, min = 1)
     @Email(regexp = RegexPatterns.email, groups = {New.class, Update.class})
     private String email;
+
     public interface New {
     }
+
     public interface Update {
     }
 }

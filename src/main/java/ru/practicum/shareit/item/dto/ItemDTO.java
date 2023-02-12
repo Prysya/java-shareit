@@ -29,8 +29,10 @@ public class ItemDTO {
     private UserDTO owner;
     @Null
     private Long request;
+
     public interface New {
     }
+
     public interface Update {
     }
 }

@@ -9,27 +9,6 @@ import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 
-/**
- * Статус бронирования
- */
-enum Status {
-    /**
-     * новое бронирование, ожидает одобрения
-     */
-    WAITING,
-    /**
-     * бронирование подтверждено владельцем
-     */
-    APPROVED,
-    /**
-     * бронирование отклонено владельцем
-     */
-    REJECTED,
-    /**
-     * бронирование отменено создателем
-     */
-    CANCELED
-}
 
 @Data
 @Builder
