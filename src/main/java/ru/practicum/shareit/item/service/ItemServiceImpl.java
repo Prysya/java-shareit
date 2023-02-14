@@ -73,7 +73,7 @@ class ItemServiceImpl implements ItemService {
 
         checkOwner(userId, item);
 
-        ItemDTO updatedItemDTO = itemMapper.toDto(repository.updateItem(itemId, item));
+        ItemDTO updatedItemDTO = itemMapper.toDto(repository.updateItem(itemId, itemMapper.toItem(itemDTO)));
         updatedItemDTO.setOwner(userDTO);
 
         return updatedItemDTO;
