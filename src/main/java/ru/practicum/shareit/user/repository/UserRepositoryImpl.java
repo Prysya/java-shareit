@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class UserRepositoryImpl implements UserRepository {
-    Map<Long, User> users = new HashMap<>();
-    Map<String, Long> emails = new HashMap<>();
+    private final Map<Long, User> users = new HashMap<>();
+    private final Map<String, Long> emails = new HashMap<>();
 
     @Override
     public List<User> getAllUsers() {

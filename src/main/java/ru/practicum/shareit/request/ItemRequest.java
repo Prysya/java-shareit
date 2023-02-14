@@ -16,17 +16,17 @@ public class ItemRequest {
     /**
      * Уникальный идентификатор запроса
      */
-    Long id;
+    private Long id;
     /**
      * Текст запроса, содержащий описание требуемой вещи
      */
-    String description;
+    private String description;
     /**
      * {@link User}, создавший запрос
      */
-    User requestor;
+    private User requestor;
     /**
      * Дата и время создания запроса
      */
-    LocalDateTime created;
+    private LocalDateTime created;
 }

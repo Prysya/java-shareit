@@ -18,25 +18,25 @@ public class Booking {
     /**
      * Уникальный идентификатор бронирования
      */
-    Long id;
+    private Long id;
     /**
      * Дата и время начала бронирования
      */
-    LocalDateTime start;
+    private LocalDateTime start;
     /**
      * Дата и время конца бронирования
      */
-    LocalDateTime end;
+    private LocalDateTime end;
     /**
      * Вещь, которую пользователь бронирует
      */
-    Item item;
+    private Item item;
     /**
      * Пользователь, который осуществляет бронирование
      */
-    User booker;
+    private User booker;
     /**
      * {@link Status}
      */
-    Status status;
+    private Status status;
 }
