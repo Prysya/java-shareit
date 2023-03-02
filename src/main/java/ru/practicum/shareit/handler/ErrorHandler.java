@@ -61,6 +61,35 @@ public class ErrorHandler {
         return new ErrorResponse(message);
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleBadRequestParams(MethodArgumentTypeMismatchException e) {
+        String name = e.getName();
+        String message;
+
+        var type = e.getRequiredType();
+
+        if (Objects.nonNull(type) && type.isEnum()) {
+
+//            TODO: сделать нормальное сообщение после ревью
+//            message = String.format("Параметр '%s' должен иметь значения: %s", name,
+//                Arrays.toString(type.getEnumConstants())
+//            );
+
+            message = String.format("Unknown state: %s", e.getValue());
+        } else if (Objects.nonNull(type)) {
+            message = String.format("Параметр '%s' должен быть типа '%s",
+                name, type.getSimpleName()
+            );
+        } else {
+            message = e.getMessage();
+        }
+
+        log.error(message);
+
+        return new ErrorResponse(message);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(final MethodArgumentNotValidException e) {
@@ -72,18 +101,6 @@ public class ErrorHandler {
         return new ErrorResponse(message);
     }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleBadRequest(final MethodArgumentTypeMismatchException e) {
-        String message =
-            String.format("Параметр '%s' со значением '%s' не может быть приведен к типу '%s'", e.getName(),
-                e.getValue(), Objects.requireNonNull(
-                    e.getRequiredType()).getSimpleName()
-            );
-
-        log.error(message);
-        return new ErrorResponse(message);
-    }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
