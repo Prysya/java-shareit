@@ -102,6 +102,7 @@ class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public void deleteItem(UserDTO userDTO, Long itemId) {
         Item item = itemRepository.findById(itemId)
             .orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND, itemId)));
