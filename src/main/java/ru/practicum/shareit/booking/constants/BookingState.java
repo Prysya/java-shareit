@@ -1,5 +1,8 @@
 package ru.practicum.shareit.booking.constants;
 
+/**
+ * Варианты состояния бронирования
+ */
 public enum BookingState {
     /**
      * Все

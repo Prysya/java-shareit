@@ -9,8 +9,6 @@ import ru.practicum.shareit.comment.dto.CommentResponseDto;
 import ru.practicum.shareit.constant.CustomHeaders;
 import ru.practicum.shareit.item.dto.ItemDTO;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.dto.UserDTO;
-import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -21,14 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemController {
     private final ItemService itemService;
-    private final UserService userService;
-
 
     @GetMapping
     public List<ItemDTO> getAllItems(@RequestHeader(CustomHeaders.USER_ID_HEADER) long userId) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return itemService.getAllItems(userDTO);
+        return itemService.getAllItems(userId);
     }
 
     @GetMapping("/{itemId}")
@@ -45,9 +39,7 @@ public class ItemController {
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Validated(ItemDTO.New.class) @RequestBody ItemDTO itemDTO
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return itemService.saveItem(userDTO, itemDTO);
+        return itemService.saveItem(userId, itemDTO);
     }
 
     @PatchMapping("/{itemId}")
@@ -56,16 +48,12 @@ public class ItemController {
         @Validated(ItemDTO.Update.class) @RequestBody ItemDTO itemDTO,
         @PathVariable Long itemId
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return itemService.updateItem(itemId, userDTO, itemDTO);
+        return itemService.updateItem(itemId, userId, itemDTO);
     }
 
     @DeleteMapping("/{itemId}")
     public void deleteItem(@RequestHeader(CustomHeaders.USER_ID_HEADER) long userId, @PathVariable Long itemId) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        itemService.deleteItem(userDTO, itemId);
+        itemService.deleteItem(userId, itemId);
     }
 
     @GetMapping("/search")
@@ -79,9 +67,7 @@ public class ItemController {
         @PathVariable long itemId,
         @Valid @RequestBody CommentRequestDto commentRequestDto
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return itemService.addComment(userDTO, itemId, commentRequestDto);
+        return itemService.addComment(userId, itemId, commentRequestDto);
     }
 }
 

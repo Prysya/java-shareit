@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.user.constants.UserErrorMessage;
 import ru.practicum.shareit.user.dto.UserDTO;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -18,8 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 class UserServiceImpl implements UserService {
-    public static final String NOT_FOUND = "Пользователь с id: '%d' не найден";
-    public static final String EMAIL_ALREADY_CREATED = "Пользователь с таким email уже зарегистрирован";
+
     private final UserRepository repository;
     private final UserMapper userMapper;
 
@@ -36,21 +36,23 @@ class UserServiceImpl implements UserService {
             User newUser = repository.save(userMapper.toUser(userDTO));
             return userMapper.toDto(newUser);
         } catch (Exception e) {
-            throw new ConflictException(EMAIL_ALREADY_CREATED);
+            throw new ConflictException(UserErrorMessage.EMAIL_ALREADY_CREATED);
         }
     }
 
     @Override
     public UserDTO getUserById(Long userId) {
         return userMapper.toDto(
-            repository.findById(userId).orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND, userId))));
+            repository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId))));
     }
 
     @Override
     @Transactional
     public UserDTO updateUser(Long userId, UserDTO userDTO) {
         User oldUser =
-            repository.findById(userId).orElseThrow(() -> new NotFoundException(String.format(NOT_FOUND, userId)));
+            repository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId)));
 
         User updatedUser = User.builder()
             .id(userId)

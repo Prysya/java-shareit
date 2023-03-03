@@ -71,10 +71,12 @@ public class ErrorHandler {
 
         if (Objects.nonNull(type) && type.isEnum()) {
 
-//            TODO: сделать нормальное сообщение после ревью
-//            message = String.format("Параметр '%s' должен иметь значения: %s", name,
-//                Arrays.toString(type.getEnumConstants())
-//            );
+            // TODO: сделать нормальное сообщение после ревью
+            // @remark "Booking get all for user 1 by wrong state" в этом тесте идет проверка на ошибку
+            // pm.expect(jsonData.error, 'Error message').to.be.eql('Unknown state: UNSUPPORTED_STATUS');",
+            // message = String.format("Параметр '%s' должен иметь значения: %s", name,
+            //      Arrays.toString(type.getEnumConstants())
+            // );
 
             message = String.format("Unknown state: %s", e.getValue());
         } else if (Objects.nonNull(type)) {

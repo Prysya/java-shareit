@@ -7,10 +7,6 @@ import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.constant.CustomHeaders;
-import ru.practicum.shareit.item.dto.ItemDTO;
-import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.user.dto.UserDTO;
-import ru.practicum.shareit.user.service.UserService;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -19,20 +15,14 @@ import java.util.List;
 @RequestMapping(path = "/bookings")
 @RequiredArgsConstructor
 public class BookingController {
-    private final UserService userService;
     private final BookingService bookingService;
-    private final ItemService itemService;
 
     @PostMapping
     public BookingResponseDto createBooking(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Valid @RequestBody BookingRequestDto bookingRequestDto
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-        ItemDTO itemDTO = itemService.getItemById(bookingRequestDto.getItemId(), userId);
-
-
-        return bookingService.createNewBooking(bookingRequestDto, userDTO, itemDTO);
+        return bookingService.createNewBooking(bookingRequestDto, userId);
     }
 
     @PatchMapping("/{bookingId}")
@@ -41,9 +31,7 @@ public class BookingController {
         @RequestParam(required = false) boolean approved,
         @PathVariable long bookingId
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return bookingService.updateBooking(bookingId, approved, userDTO);
+        return bookingService.updateBooking(bookingId, approved, userId);
     }
 
     @GetMapping("/{bookingId}")
@@ -51,9 +39,7 @@ public class BookingController {
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @PathVariable Long bookingId
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return bookingService.getBookingById(bookingId, userDTO);
+        return bookingService.getBookingById(bookingId, userId);
     }
 
     @GetMapping
@@ -61,9 +47,7 @@ public class BookingController {
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(required = false, defaultValue = "ALL") BookingState state
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return bookingService.getCurrentUserBookings(state, userDTO);
+        return bookingService.getCurrentUserBookings(state, userId);
     }
 
     @GetMapping("/owner")
@@ -71,8 +55,6 @@ public class BookingController {
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(required = false, defaultValue = "ALL") BookingState state
     ) {
-        UserDTO userDTO = userService.getUserById(userId);
-
-        return bookingService.getCurrentUserAllItemsBookings(state, userDTO);
+        return bookingService.getCurrentUserAllItemsBookings(state, userId);
     }
 }

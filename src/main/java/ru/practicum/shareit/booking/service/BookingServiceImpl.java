@@ -3,6 +3,7 @@ package ru.practicum.shareit.booking.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.constants.BookingErrorMessage;
 import ru.practicum.shareit.booking.constants.BookingState;
 import ru.practicum.shareit.booking.constants.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
@@ -12,10 +13,14 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.item.dto.ItemDTO;
+import ru.practicum.shareit.item.constants.ItemErrorMessage;
 import ru.practicum.shareit.item.mapper.ItemMapper;
-import ru.practicum.shareit.user.dto.UserDTO;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.constants.UserErrorMessage;
 import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,39 +30,36 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BookingServiceImpl implements BookingService {
-    public static final String USER_OWN_ITEM = "Пользователь не может создать бронирование на свою же вещь";
-    public static final String BOOKING_NOT_FOUND = "Бронирование с id = %d, не найдено";
-    public static final String STATUS_ALREADY_CHANGED =
-        "Невозможно изменить статус бронирования с id = %d. Статус уже ранее был изменен";
-    public static final String NOT_AUTHORIZED = "Изменение статуса вещи может быть выполнено только владельцем";
-    public static final String ITEM_IS_NOT_AVAILABLE = "Вещь c id = %d не доступна";
-    public static final String START_IS_LATER_THEN_END = "Дата начала не может быть позднее даты окончания";
-
     private final BookingMapper bookingMapper;
     private final ItemMapper itemMapper;
     private final UserMapper userMapper;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
 
 
     @Override
     @Transactional
-    public BookingResponseDto createNewBooking(BookingRequestDto bookingRequestDto, UserDTO userDTO, ItemDTO itemDTO) {
-        if (!itemDTO.getAvailable()) {
-            throw new BadRequestException(String.format(ITEM_IS_NOT_AVAILABLE, itemDTO.getId()));
+    public BookingResponseDto createNewBooking(BookingRequestDto bookingRequestDto, long userId) {
+        User user = checkAndReturnUser(userId);
+        Item item = checkAndReturnItem(bookingRequestDto.getItemId());
+
+        if (Boolean.FALSE.equals(item.getAvailable())) {
+            throw new BadRequestException(String.format(BookingErrorMessage.ITEM_IS_NOT_AVAILABLE, item.getId()));
         }
 
         if (bookingRequestDto.getStart().isAfter(bookingRequestDto.getEnd())) {
-            throw new BadRequestException(START_IS_LATER_THEN_END);
+            throw new BadRequestException(BookingErrorMessage.START_IS_LATER_THEN_END);
         }
 
-        if (itemDTO.getOwner().getId().equals(userDTO.getId())) {
-            throw new NotFoundException(USER_OWN_ITEM);
+        if (item.getOwner().getId().equals(userId)) {
+            throw new NotFoundException(BookingErrorMessage.USER_OWN_ITEM);
         }
 
         Booking booking = bookingMapper.toBooking(bookingRequestDto);
         booking.setStatus(BookingStatus.WAITING);
-        booking.setBooker(userMapper.toUser(userDTO));
-        booking.setItem(itemMapper.toItem(itemDTO, userMapper.toUser(itemDTO.getOwner())));
+        booking.setBooker(user);
+        booking.setItem(item);
 
         Booking newBooking = bookingRepository.save(booking);
 
@@ -67,22 +69,21 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto updateBooking(
-        long bookingId, boolean approved, UserDTO userDTO
+        long bookingId, boolean approved, long userId
     ) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> {
-            throw new NotFoundException(String.format(BOOKING_NOT_FOUND, bookingId));
-        });
+        checkAndReturnUser(userId);
+        Booking booking = checkAndReturnBooking(bookingId);
 
         if (!booking.getStatus().equals(BookingStatus.WAITING)) {
-            throw new BadRequestException(String.format(STATUS_ALREADY_CHANGED, bookingId));
+            throw new BadRequestException(String.format(BookingErrorMessage.STATUS_ALREADY_CHANGED, bookingId));
         }
 
-        if (booking.getBooker().getId().equals(userDTO.getId())) {
-            throw new NotFoundException(NOT_AUTHORIZED);
+        if (booking.getBooker().getId().equals(userId)) {
+            throw new NotFoundException(BookingErrorMessage.NOT_AUTHORIZED);
         }
 
-        if (!userDTO.getId().equals(booking.getItem().getOwner().getId())) {
-            throw new BadRequestException(NOT_AUTHORIZED);
+        if (!booking.getItem().getOwner().getId().equals(userId)) {
+            throw new BadRequestException(BookingErrorMessage.NOT_AUTHORIZED);
         }
 
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
@@ -91,31 +92,29 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponseDto getBookingById(Long bookingId, UserDTO userDTO) {
+    public BookingResponseDto getBookingById(long bookingId, long userId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> {
-            throw new NotFoundException(String.format(BOOKING_NOT_FOUND, bookingId));
+            throw new NotFoundException(String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId));
         });
 
-        if (booking.getBooker().getId().equals(userDTO.getId()) ||
-            booking.getItem().getOwner().getId().equals(userDTO.getId())
-        ) {
+        if (booking.getBooker().getId().equals(userId) ||
+            booking.getItem().getOwner().getId().equals(userId)) {
             return mapBookingToDTO(booking);
         }
 
-        throw new NotFoundException(String.format(BOOKING_NOT_FOUND, bookingId));
+        throw new NotFoundException(String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId));
     }
 
     @Override
-    public List<BookingResponseDto> getCurrentUserBookings(BookingState state, UserDTO userDTO) {
-        long userId = userDTO.getId();
+    public List<BookingResponseDto> getCurrentUserBookings(BookingState state, long userId) {
+        checkAndReturnUser(userId);
         LocalDateTime currentTime = LocalDateTime.now();
 
         List<Booking> bookings;
 
         switch (state) {
             case CURRENT:
-                bookings =
-                    bookingRepository.findCurrentBookingsByBookerId(userId, currentTime);
+                bookings = bookingRepository.findCurrentBookingsByBookerId(userId, currentTime);
                 break;
             case PAST:
                 bookings = bookingRepository.findPastBookingsByBookerId(userId, currentTime);
@@ -138,16 +137,15 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDto> getCurrentUserAllItemsBookings(BookingState state, UserDTO userDTO) {
-        long ownerId = userDTO.getId();
+    public List<BookingResponseDto> getCurrentUserAllItemsBookings(BookingState state, long ownerId) {
+        checkAndReturnUser(ownerId);
         LocalDateTime currentTime = LocalDateTime.now();
 
         List<Booking> bookings;
 
         switch (state) {
             case CURRENT:
-                bookings =
-                    bookingRepository.findCurrentBookingsByOwnerId(ownerId, currentTime);
+                bookings = bookingRepository.findCurrentBookingsByOwnerId(ownerId, currentTime);
                 break;
             case PAST:
                 bookings = bookingRepository.findPastBookingsByOwnerId(ownerId, currentTime);
@@ -170,14 +168,27 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private BookingResponseDto mapBookingToDTO(Booking booking) {
-        return bookingMapper.toResponseDto(
-            booking,
-            userMapper.toDto(booking.getBooker()),
+        return bookingMapper.toResponseDto(booking, userMapper.toDto(booking.getBooker()),
             itemMapper.toDto(booking.getItem(), userMapper.toDto(booking.getItem().getOwner()))
         );
     }
 
     private List<BookingResponseDto> mapBookingToDTO(List<Booking> bookings) {
         return bookings.stream().map(this::mapBookingToDTO).collect(Collectors.toList());
+    }
+
+    private User checkAndReturnUser(long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId)));
+    }
+
+    private Item checkAndReturnItem(long itemId) {
+        return itemRepository.findById(itemId)
+            .orElseThrow(() -> new NotFoundException(String.format(ItemErrorMessage.NOT_FOUND, itemId)));
+    }
+
+    private Booking checkAndReturnBooking(long bookingId) {
+        return bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new NotFoundException(String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId)));
     }
 }
