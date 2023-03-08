@@ -4,9 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.comment.dto.CommentRequestDto;
+import ru.practicum.shareit.comment.dto.CommentResponseDto;
+import ru.practicum.shareit.constant.CustomHeaders;
 import ru.practicum.shareit.item.dto.ItemDTO;
 import ru.practicum.shareit.item.service.ItemService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 
@@ -14,24 +18,25 @@ import java.util.List;
 @RequestMapping("/items")
 @RequiredArgsConstructor
 public class ItemController {
-    public static final String USER_ID_HEADER = "X-Sharer-User-Id";
     private final ItemService itemService;
 
-
     @GetMapping
-    public List<ItemDTO> getAllItems(@RequestHeader(USER_ID_HEADER) long userId) {
+    public List<ItemDTO> getAllItems(@RequestHeader(CustomHeaders.USER_ID_HEADER) long userId) {
         return itemService.getAllItems(userId);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDTO getItemById(@PathVariable Long itemId) {
-        return itemService.getItemById(itemId);
+    public ItemDTO getItemById(
+        @PathVariable Long itemId,
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
+    ) {
+        return itemService.getItemById(itemId, userId);
     }
 
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
     public ItemDTO saveItem(
-        @RequestHeader(USER_ID_HEADER) long userId,
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Validated(ItemDTO.New.class) @RequestBody ItemDTO itemDTO
     ) {
         return itemService.saveItem(userId, itemDTO);
@@ -39,7 +44,7 @@ public class ItemController {
 
     @PatchMapping("/{itemId}")
     public ItemDTO updateItem(
-        @RequestHeader(USER_ID_HEADER) long userId,
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Validated(ItemDTO.Update.class) @RequestBody ItemDTO itemDTO,
         @PathVariable Long itemId
     ) {
@@ -47,7 +52,7 @@ public class ItemController {
     }
 
     @DeleteMapping("/{itemId}")
-    public void deleteItem(@RequestHeader(USER_ID_HEADER) long userId, @PathVariable Long itemId) {
+    public void deleteItem(@RequestHeader(CustomHeaders.USER_ID_HEADER) long userId, @PathVariable Long itemId) {
         itemService.deleteItem(userId, itemId);
     }
 
@@ -56,7 +61,14 @@ public class ItemController {
         return itemService.searchAvailableItemsByText(text);
     }
 
-
+    @PostMapping("/{itemId}/comment")
+    public CommentResponseDto addComment(
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
+        @PathVariable long itemId,
+        @Valid @RequestBody CommentRequestDto commentRequestDto
+    ) {
+        return itemService.addComment(userId, itemId, commentRequestDto);
+    }
 }
 
 
