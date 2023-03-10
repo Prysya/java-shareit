@@ -1,32 +1,32 @@
-package ru.practicum.shareit.request;
+package ru.practicum.shareit.request.model;
 
 import lombok.*;
 import org.hibernate.Hibernate;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Builder
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
-@Setter(value = AccessLevel.PACKAGE)
+@AllArgsConstructor
+@Setter
 @Getter
 @Table(name = "requests")
 @NoArgsConstructor
 public class ItemRequest {
-    /**
-     * Дата и время создания запроса
-     */
-    @Column
-    private final Instant created = Instant.now();
     /**
      * Уникальный идентификатор запроса
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    /**
+     * Дата и время создания запроса
+     */
+    @Column
+    private LocalDateTime created;
     /**
      * Текст запроса, содержащий описание требуемой вещи
      */

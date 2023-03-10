@@ -17,6 +17,8 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.UnauthorizedException;
 
 import javax.validation.ConstraintViolationException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -25,8 +27,7 @@ public class ErrorHandler {
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(final BadRequestException e) {
-        String message =
-            e.getMessage();
+        String message = e.getMessage();
 
         log.error(message);
         return new ErrorResponse(message);
@@ -35,8 +36,7 @@ public class ErrorHandler {
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleBadRequest(final ConflictException e) {
-        String message =
-            e.getMessage();
+        String message = e.getMessage();
 
         log.error(message);
         return new ErrorResponse(message);
@@ -45,8 +45,7 @@ public class ErrorHandler {
     @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleBadRequest(final UnauthorizedException e) {
-        String message =
-            e.getMessage();
+        String message = e.getMessage();
 
         log.error(message);
         return new ErrorResponse(message);
@@ -80,9 +79,7 @@ public class ErrorHandler {
 
             message = String.format("Unknown state: %s", e.getValue());
         } else if (Objects.nonNull(type)) {
-            message = String.format("Параметр '%s' должен быть типа '%s",
-                name, type.getSimpleName()
-            );
+            message = String.format("Параметр '%s' должен быть типа '%s", name, type.getSimpleName());
         } else {
             message = e.getMessage();
         }
@@ -95,8 +92,7 @@ public class ErrorHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(final MethodArgumentNotValidException e) {
-        String message = "Поле " + Objects.requireNonNull(e.getBindingResult().getFieldError()).getField() +
-            " " +
+        String message = "Поле " + Objects.requireNonNull(e.getBindingResult().getFieldError()).getField() + " " +
             e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
 
         log.error(message);
@@ -107,8 +103,7 @@ public class ErrorHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(final MissingRequestHeaderException e) {
-        String message =
-            String.format("Заголовок '%s' не передан'", e.getHeaderName());
+        String message = String.format("Заголовок '%s' не передан'", e.getHeaderName());
 
         log.error(message);
         return new ErrorResponse(message);
@@ -126,7 +121,13 @@ public class ErrorHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(final ConstraintViolationException ex) {
-        String message = ex.getMessage();
+        List<String> messages = new ArrayList<>();
+
+        ex.getConstraintViolations().stream().forEach(constraintViolation -> {
+            messages.add(constraintViolation.getMessage());
+        });
+
+        String message = String.join(", ", messages);
 
         log.error(message);
         return new ErrorResponse(message);
@@ -141,9 +142,7 @@ public class ErrorHandler {
         log.error(message);
         log.error(String.valueOf(e.getClass()));
 
-        return new ErrorResponse(
-            "Произошла непредвиденная ошибка"
-        );
+        return new ErrorResponse("Произошла непредвиденная ошибка");
     }
 
     @RequiredArgsConstructor

@@ -1,23 +1,25 @@
 package ru.practicum.shareit.item.service;
 
+import org.springframework.data.domain.PageRequest;
 import ru.practicum.shareit.comment.dto.CommentRequestDto;
 import ru.practicum.shareit.comment.dto.CommentResponseDto;
-import ru.practicum.shareit.item.dto.ItemDTO;
+import ru.practicum.shareit.item.dto.ItemRequestDto;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
 
 import java.util.List;
 
 public interface ItemService {
-    List<ItemDTO> getAllItems(Long userId);
+    List<ItemResponseDto> getAllItems(Long userId, PageRequest pageRequest);
 
-    ItemDTO saveItem(Long userId, ItemDTO itemDTO);
+    ItemResponseDto saveItem(Long userId, ItemRequestDto itemDTO);
 
-    ItemDTO getItemById(Long itemId, Long requestUserId);
+    ItemResponseDto getItemById(Long itemId, Long requestUserId);
 
-    ItemDTO updateItem(Long itemId, Long userId, ItemDTO itemDTO);
+    ItemResponseDto updateItem(Long itemId, Long userId, ItemRequestDto itemDTO);
 
     void deleteItem(Long userId, Long itemId);
 
-    List<ItemDTO> searchAvailableItemsByText(String text);
+    List<ItemResponseDto> searchAvailableItemsByText(String text, PageRequest pageRequest);
 
     CommentResponseDto addComment(Long userId, Long itemId, CommentRequestDto commentRequestDto);
 }

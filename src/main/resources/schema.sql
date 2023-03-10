@@ -1,6 +1,7 @@
 drop table if exists users cascade;
 drop table if exists items cascade;
 drop table if exists bookings;
+drop index if exists bookings_start_date_index;
 drop table if exists requests;
 drop table if exists comments;
 
@@ -53,6 +54,9 @@ create table if not exists bookings
     constraint bookings_users_id_fk
         foreign key (booker_id) references users on delete cascade
 );
+
+create index if not exists bookings_start_date_index
+    on bookings (start_date);
 
 create table if not exists comments
 (

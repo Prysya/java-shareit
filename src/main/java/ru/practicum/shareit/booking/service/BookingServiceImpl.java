@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.constants.BookingErrorMessage;
@@ -106,7 +107,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingResponseDto> getCurrentUserBookings(BookingState state, long userId) {
+    public List<BookingResponseDto> getCurrentUserBookings(BookingState state, long userId, PageRequest pageRequest) {
         checkAndReturnUser(userId);
         LocalDateTime currentTime = LocalDateTime.now();
 
@@ -114,30 +115,34 @@ public class BookingServiceImpl implements BookingService {
 
         switch (state) {
             case CURRENT:
-                bookings = bookingRepository.findCurrentBookingsByBookerId(userId, currentTime);
+                bookings = bookingRepository.findCurrentBookingsByBookerId(userId, currentTime, pageRequest);
                 break;
             case PAST:
-                bookings = bookingRepository.findPastBookingsByBookerId(userId, currentTime);
+                bookings = bookingRepository.findPastBookingsByBookerId(userId, currentTime, pageRequest);
                 break;
             case FUTURE:
-                bookings = bookingRepository.findFutureBookingsByBookerId(userId, currentTime);
+                bookings = bookingRepository.findFutureBookingsByBookerId(userId, currentTime, pageRequest);
                 break;
             case WAITING:
-                bookings = bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.WAITING);
+                bookings =
+                    bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.WAITING, pageRequest);
                 break;
             case REJECTED:
-                bookings = bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.REJECTED);
+                bookings =
+                    bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.REJECTED, pageRequest);
                 break;
             case ALL:
             default:
-                bookings = bookingRepository.findAllBookingsByBookerId(userId);
+                bookings = bookingRepository.findAllBookingsByBookerId(userId, pageRequest);
         }
 
         return mapBookingToDTO(bookings);
     }
 
     @Override
-    public List<BookingResponseDto> getCurrentUserAllItemsBookings(BookingState state, long ownerId) {
+    public List<BookingResponseDto> getCurrentUserAllItemsBookings(
+        BookingState state, long ownerId, PageRequest pageRequest
+    ) {
         checkAndReturnUser(ownerId);
         LocalDateTime currentTime = LocalDateTime.now();
 
@@ -145,23 +150,25 @@ public class BookingServiceImpl implements BookingService {
 
         switch (state) {
             case CURRENT:
-                bookings = bookingRepository.findCurrentBookingsByOwnerId(ownerId, currentTime);
+                bookings = bookingRepository.findCurrentBookingsByOwnerId(ownerId, currentTime, pageRequest);
                 break;
             case PAST:
-                bookings = bookingRepository.findPastBookingsByOwnerId(ownerId, currentTime);
+                bookings = bookingRepository.findPastBookingsByOwnerId(ownerId, currentTime, pageRequest);
                 break;
             case FUTURE:
-                bookings = bookingRepository.findFutureBookingsByOwnerId(ownerId, currentTime);
+                bookings = bookingRepository.findFutureBookingsByOwnerId(ownerId, currentTime, pageRequest);
                 break;
             case WAITING:
-                bookings = bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.WAITING);
+                bookings =
+                    bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.WAITING, pageRequest);
                 break;
             case REJECTED:
-                bookings = bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.REJECTED);
+                bookings =
+                    bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.REJECTED, pageRequest);
                 break;
             case ALL:
             default:
-                bookings = bookingRepository.findAllBookingsByOwnerId(ownerId);
+                bookings = bookingRepository.findAllBookingsByOwnerId(ownerId, pageRequest);
         }
 
         return mapBookingToDTO(bookings);
@@ -169,7 +176,7 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingResponseDto mapBookingToDTO(Booking booking) {
         return bookingMapper.toResponseDto(booking, userMapper.toDto(booking.getBooker()),
-            itemMapper.toDto(booking.getItem(), userMapper.toDto(booking.getItem().getOwner()))
+            itemMapper.toResponseDto(booking.getItem(), userMapper.toDto(booking.getItem().getOwner()))
         );
     }
 

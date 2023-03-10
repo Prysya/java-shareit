@@ -5,12 +5,12 @@ import ru.practicum.shareit.booking.dto.BookingItemResponseDTO;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.item.dto.ItemDTO;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.user.dto.UserDTO;
 
 @Component
 public class BookingMapper {
-    public BookingResponseDto toResponseDto(Booking booking, UserDTO bookerDTO, ItemDTO itemDTO) {
+    public BookingResponseDto toResponseDto(Booking booking, UserDTO bookerDTO, ItemResponseDto itemDTO) {
         return BookingResponseDto.builder()
             .id(booking.getId())
             .status(booking.getStatus())
