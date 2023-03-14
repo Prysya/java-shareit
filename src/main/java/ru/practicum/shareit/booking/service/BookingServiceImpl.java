@@ -49,6 +49,10 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException(String.format(BookingErrorMessage.ITEM_IS_NOT_AVAILABLE, item.getId()));
         }
 
+        if (bookingRequestDto.getStart().equals(bookingRequestDto.getEnd())) {
+            throw new BadRequestException(BookingErrorMessage.START_IS_EQUALS_END);
+        }
+
         if (bookingRequestDto.getStart().isAfter(bookingRequestDto.getEnd())) {
             throw new BadRequestException(BookingErrorMessage.START_IS_LATER_THEN_END);
         }
@@ -94,12 +98,11 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingResponseDto getBookingById(long bookingId, long userId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> {
-            throw new NotFoundException(String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId));
-        });
+        Booking booking = checkAndReturnBooking(bookingId);
 
-        if (booking.getBooker().getId().equals(userId) ||
-            booking.getItem().getOwner().getId().equals(userId)) {
+        if (booking.getBooker().getId().equals(userId)
+            || booking.getItem().getOwner().getId().equals(userId)
+        ) {
             return mapBookingToDTO(booking);
         }
 

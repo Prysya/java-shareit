@@ -191,10 +191,9 @@ class ItemServiceImpl implements ItemService {
         if (itemResponseDto.getOwner().getId().equals(requestUserId)) {
             List<Booking> bookings = bookingRepository.findByItemIdOrderByIdDesc(itemResponseDto.getId());
 
-
             Booking lastBooking =
                 bookings.stream().filter(booking -> !booking.getStatus().equals(BookingStatus.REJECTED))
-                    .filter(booking -> booking.getEnd().isBefore(LocalDateTime.now())).findFirst().orElse(null);
+                    .filter(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst().orElse(null);
 
             Booking nextBooking =
                 bookings.stream().filter(booking -> booking.getStatus().equals(BookingStatus.APPROVED))

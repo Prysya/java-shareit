@@ -26,7 +26,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     );
 
     @Query("select b from Booking b " +
-        "where b.booker.id = ?1 and b.start > ?2 order by b.start DESC")
+        "where b.booker.id = ?1 and b.end > ?2 order by b.start DESC")
     List<Booking> findFutureBookingsByBookerId(
         Long bookerId, LocalDateTime currentDate, Pageable pageable
     );

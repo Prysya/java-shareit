@@ -1,6 +1,8 @@
 package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.constants.BookingState;
@@ -24,32 +26,32 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public BookingResponseDto createBooking(
+    public ResponseEntity<BookingResponseDto> createBooking(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Valid @RequestBody BookingRequestDto bookingRequestDto
     ) {
-        return bookingService.createNewBooking(bookingRequestDto, userId);
+        return new ResponseEntity<>(bookingService.createNewBooking(bookingRequestDto, userId), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{bookingId}")
-    public BookingResponseDto updateBooking(
+    public ResponseEntity<BookingResponseDto> updateBooking(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(required = false) boolean approved,
         @PathVariable long bookingId
     ) {
-        return bookingService.updateBooking(bookingId, approved, userId);
+        return ResponseEntity.ok(bookingService.updateBooking(bookingId, approved, userId));
     }
 
     @GetMapping("/{bookingId}")
-    public BookingResponseDto getBookingById(
+    public ResponseEntity<BookingResponseDto> getBookingById(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @PathVariable Long bookingId
     ) {
-        return bookingService.getBookingById(bookingId, userId);
+        return ResponseEntity.ok(bookingService.getBookingById(bookingId, userId));
     }
 
     @GetMapping
-    public List<BookingResponseDto> getCurrentUserBookings(
+    public ResponseEntity<List<BookingResponseDto>> getCurrentUserBookings(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(required = false, defaultValue = "ALL") BookingState state,
         @RequestParam(defaultValue = "0")
@@ -59,11 +61,11 @@ public class BookingController {
         @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
         Integer size
     ) {
-        return bookingService.getCurrentUserBookings(state, userId, new AppPageRequest(from, size));
+        return ResponseEntity.ok(bookingService.getCurrentUserBookings(state, userId, new AppPageRequest(from, size)));
     }
 
     @GetMapping("/owner")
-    public List<BookingResponseDto> getCurrentUserAllItemsBookings(
+    public ResponseEntity<List<BookingResponseDto>> getCurrentUserAllItemsBookings(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(required = false, defaultValue = "ALL") BookingState state,
         @RequestParam(defaultValue = "0")
@@ -73,6 +75,7 @@ public class BookingController {
         @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
         Integer size
     ) {
-        return bookingService.getCurrentUserAllItemsBookings(state, userId, new AppPageRequest(from, size));
+        return ResponseEntity.ok(
+            bookingService.getCurrentUserAllItemsBookings(state, userId, new AppPageRequest(from, size)));
     }
 }

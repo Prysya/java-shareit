@@ -11,4 +11,5 @@ public class BookingErrorMessage {
     public static final String NOT_AUTHORIZED = "Изменение статуса вещи может быть выполнено только владельцем";
     public static final String ITEM_IS_NOT_AVAILABLE = "Вещь c id = %d не доступна";
     public static final String START_IS_LATER_THEN_END = "Дата начала не может быть позднее даты окончания";
+    public static final String START_IS_EQUALS_END = "Дата начала не может равна дате окончания";
 }
