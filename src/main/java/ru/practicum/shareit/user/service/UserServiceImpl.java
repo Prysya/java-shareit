@@ -21,20 +21,19 @@ import java.util.stream.Collectors;
 class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
-    private final UserMapper userMapper;
 
 
     @Override
     public List<UserDTO> getAllUsers() {
-        return repository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
+        return repository.findAll().stream().map(UserMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public UserDTO saveUser(UserDTO userDTO) {
         try {
-            User newUser = repository.save(userMapper.toUser(userDTO));
-            return userMapper.toDto(newUser);
+            User newUser = repository.save(UserMapper.toUser(userDTO));
+            return UserMapper.toDto(newUser);
         } catch (Exception e) {
             throw new ConflictException(UserErrorMessage.EMAIL_ALREADY_CREATED);
         }
@@ -42,7 +41,7 @@ class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO getUserById(Long userId) {
-        return userMapper.toDto(
+        return UserMapper.toDto(
             repository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId))));
     }
@@ -60,7 +59,7 @@ class UserServiceImpl implements UserService {
             .email(Objects.requireNonNullElse(userDTO.getEmail(), oldUser.getEmail()))
             .build();
 
-        return saveUser(userMapper.toDto(updatedUser));
+        return saveUser(UserMapper.toDto(updatedUser));
     }
 
     @Override

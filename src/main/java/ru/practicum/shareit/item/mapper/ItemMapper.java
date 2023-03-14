@@ -1,6 +1,6 @@
 package ru.practicum.shareit.item.mapper;
 
-import org.springframework.stereotype.Component;
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.dto.ItemRequestDto;
 import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.model.Item;
@@ -9,11 +9,10 @@ import ru.practicum.shareit.user.model.User;
 
 import java.util.Objects;
 
-@Component
+
+@UtilityClass
 public class ItemMapper {
-
-
-    public ItemResponseDto toResponseDto(Item item, UserDTO userDTO) {
+    public static ItemResponseDto toResponseDto(Item item, UserDTO userDTO) {
         return ItemResponseDto.builder()
             .id(item.getId())
             .name(item.getName())
@@ -24,7 +23,7 @@ public class ItemMapper {
             .build();
     }
 
-    public Item toItem(ItemRequestDto itemRequestDto, User owner) {
+    public static Item toItem(ItemRequestDto itemRequestDto, User owner) {
         return Item.builder()
             .description(itemRequestDto.getDescription())
             .available(itemRequestDto.getAvailable())

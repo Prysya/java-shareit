@@ -1,12 +1,12 @@
 package ru.practicum.shareit.user.mapper;
 
-import org.springframework.stereotype.Component;
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.user.dto.UserDTO;
 import ru.practicum.shareit.user.model.User;
 
-@Component
+@UtilityClass
 public class UserMapper {
-    public UserDTO toDto(User user) {
+    public static UserDTO toDto(User user) {
         return UserDTO.builder()
             .id(user.getId())
             .name(user.getName())
@@ -14,7 +14,7 @@ public class UserMapper {
             .build();
     }
 
-    public User toUser(UserDTO userDTO) {
+    public static User toUser(UserDTO userDTO) {
         return User.builder()
             .id(userDTO.getId())
             .name(userDTO.getName())

@@ -31,9 +31,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BookingServiceImpl implements BookingService {
-    private final BookingMapper bookingMapper;
-    private final ItemMapper itemMapper;
-    private final UserMapper userMapper;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
@@ -61,7 +58,7 @@ public class BookingServiceImpl implements BookingService {
             throw new NotFoundException(BookingErrorMessage.USER_OWN_ITEM);
         }
 
-        Booking booking = bookingMapper.toBooking(bookingRequestDto);
+        Booking booking = BookingMapper.toBooking(bookingRequestDto);
         booking.setStatus(BookingStatus.WAITING);
         booking.setBooker(user);
         booking.setItem(item);
@@ -178,8 +175,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private BookingResponseDto mapBookingToDTO(Booking booking) {
-        return bookingMapper.toResponseDto(booking, userMapper.toDto(booking.getBooker()),
-            itemMapper.toResponseDto(booking.getItem(), userMapper.toDto(booking.getItem().getOwner()))
+        return BookingMapper.toResponseDto(booking, UserMapper.toDto(booking.getBooker()),
+            ItemMapper.toResponseDto(booking.getItem(), UserMapper.toDto(booking.getItem().getOwner()))
         );
     }
 

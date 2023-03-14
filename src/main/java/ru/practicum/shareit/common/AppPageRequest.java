@@ -1,10 +1,11 @@
 package ru.practicum.shareit.common;
 
+import lombok.EqualsAndHashCode;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.util.Objects;
 
+@EqualsAndHashCode(callSuper = false)
 public class AppPageRequest extends PageRequest {
     private final int from;
 
@@ -16,25 +17,5 @@ public class AppPageRequest extends PageRequest {
     @Override
     public long getOffset() {
         return from;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof AppPageRequest)) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        AppPageRequest that = (AppPageRequest) o;
-        return from == that.from;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), from);
     }
 }

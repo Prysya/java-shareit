@@ -45,21 +45,16 @@ class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
-    private final ItemMapper itemMapper;
-    private final UserMapper userMapper;
-    private final BookingMapper bookingMapper;
-    private final CommentMapper commentMapper;
-
     private final ItemRequestRepository itemRequestRepository;
 
 
     @Override
     public List<ItemResponseDto> getAllItems(Long userId, PageRequest pageRequest) {
-        UserDTO userDTO = userMapper.toDto(checkAndReturnUser(userId));
+        UserDTO userDTO = UserMapper.toDto(checkAndReturnUser(userId));
         List<Item> items = itemRepository.findByOwnerIdOrderByIdAsc(userId, pageRequest);
 
         return items.stream().map(item -> {
-            ItemResponseDto itemResponseDto = itemMapper.toResponseDto(item, userDTO);
+            ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, userDTO);
             setBookingsToDTO(itemResponseDto, userDTO.getId());
             setCommentsToDTO(itemResponseDto);
 
@@ -71,22 +66,22 @@ class ItemServiceImpl implements ItemService {
     @Transactional
     public ItemResponseDto saveItem(Long userId, ItemRequestDto itemRequestDto) {
         User user = checkAndReturnUser(userId);
-        Item item = itemMapper.toItem(itemRequestDto, user);
+        Item item = ItemMapper.toItem(itemRequestDto, user);
 
         if (Objects.nonNull(itemRequestDto.getRequestId())) {
             ItemRequest request = checkAndReturnItemRequest(itemRequestDto.getRequestId());
             item.setRequest(request);
         }
 
-        return itemMapper.toResponseDto(itemRepository.save(item), userMapper.toDto(user));
+        return ItemMapper.toResponseDto(itemRepository.save(item), UserMapper.toDto(user));
     }
 
     @Override
     public ItemResponseDto getItemById(Long itemId, Long requestUserId) {
         Item item = checkAndReturnItem(itemId);
 
-        UserDTO ownerDTO = userMapper.toDto(item.getOwner());
-        ItemResponseDto itemResponseDto = itemMapper.toResponseDto(item, ownerDTO);
+        UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
+        ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
         setBookingsToDTO(itemResponseDto, requestUserId);
         setCommentsToDTO(itemResponseDto);
 
@@ -112,7 +107,7 @@ class ItemServiceImpl implements ItemService {
 
         itemRepository.save(updatedItem);
 
-        return itemMapper.toResponseDto(updatedItem, userMapper.toDto(user));
+        return ItemMapper.toResponseDto(updatedItem, UserMapper.toDto(user));
     }
 
     @Override
@@ -134,9 +129,9 @@ class ItemServiceImpl implements ItemService {
         }
 
         return itemRepository.findItemsWithText(text, pageRequest).stream().map(item -> {
-            UserDTO ownerDTO = userMapper.toDto(item.getOwner());
+            UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
 
-            ItemResponseDto itemResponseDto = itemMapper.toResponseDto(item, ownerDTO);
+            ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
             setBookingsToDTO(itemResponseDto, item.getOwner().getId());
 
             return itemResponseDto;
@@ -159,12 +154,12 @@ class ItemServiceImpl implements ItemService {
             throw new BadRequestException(ItemErrorMessage.COMMENT_ERROR);
         }
 
-        Comment comment = commentMapper.toComment(commentRequestDto);
+        Comment comment = CommentMapper.toComment(commentRequestDto);
         comment.setItem(item);
         comment.setAuthor(user);
         comment.setCreated(LocalDateTime.now());
 
-        return commentMapper.toResponseDto(commentRepository.save(comment), userMapper.toDto(user));
+        return CommentMapper.toResponseDto(commentRepository.save(comment), UserMapper.toDto(user));
     }
 
     /**
@@ -183,7 +178,7 @@ class ItemServiceImpl implements ItemService {
         List<Comment> comments = commentRepository.findByItemId(itemResponseDto.getId());
 
         itemResponseDto.setComments(comments.stream()
-            .map(comment -> commentMapper.toResponseDto(comment, userMapper.toDto(comment.getAuthor())))
+            .map(comment -> CommentMapper.toResponseDto(comment, UserMapper.toDto(comment.getAuthor())))
             .collect(Collectors.toList()));
     }
 
@@ -200,9 +195,9 @@ class ItemServiceImpl implements ItemService {
                     .filter(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst().orElse(null);
 
             itemResponseDto.setLastBooking(Objects.isNull(lastBooking) ? null :
-                bookingMapper.toItemResponseDto(lastBooking, userMapper.toDto(lastBooking.getBooker())));
+                BookingMapper.toItemResponseDto(lastBooking, UserMapper.toDto(lastBooking.getBooker())));
             itemResponseDto.setNextBooking(Objects.isNull(nextBooking) ? null :
-                bookingMapper.toItemResponseDto(nextBooking, userMapper.toDto(nextBooking.getBooker())));
+                BookingMapper.toItemResponseDto(nextBooking, UserMapper.toDto(nextBooking.getBooker())));
         }
     }
 
