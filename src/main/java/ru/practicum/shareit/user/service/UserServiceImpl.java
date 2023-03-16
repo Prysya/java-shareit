@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+public
 class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
@@ -41,17 +42,13 @@ class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO getUserById(Long userId) {
-        return UserMapper.toDto(
-            repository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId))));
+        return UserMapper.toDto(findAndReturnUser(userId));
     }
 
     @Override
     @Transactional
     public UserDTO updateUser(Long userId, UserDTO userDTO) {
-        User oldUser =
-            repository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId)));
+        User oldUser = findAndReturnUser(userId);
 
         User updatedUser = User.builder()
             .id(userId)
@@ -66,5 +63,10 @@ class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(Long userId) {
         repository.deleteById(userId);
+    }
+
+    private User findAndReturnUser(Long userId) {
+        return repository.findById(userId)
+            .orElseThrow(() -> new NotFoundException(String.format(UserErrorMessage.NOT_FOUND, userId)));
     }
 }

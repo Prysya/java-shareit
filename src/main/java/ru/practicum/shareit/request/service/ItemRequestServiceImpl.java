@@ -22,6 +22,8 @@ import ru.practicum.shareit.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,10 +41,17 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         User user = checkAndReturnUser(userId);
         List<ItemRequest> itemRequests = itemRequestRepository.findByRequestorIdOrderByCreatedAsc(userId);
 
+        Map<Long, List<ItemResponseDto>> itemsMap =
+            getItems(itemRequests.stream().map(ItemRequest::getId).collect(Collectors.toSet()));
+
+
         return itemRequests.stream().map(
-            itemRequest -> ItemRequestMapper.toResponseDto(itemRequest, UserMapper.toDto(user),
-                getItems(itemRequest.getId())
-            )).collect(Collectors.toList());
+            itemRequest -> ItemRequestMapper.toResponseDto(
+                itemRequest,
+                UserMapper.toDto(user),
+                itemsMap.get(itemRequest.getId())
+            )).collect(Collectors.toList()
+        );
     }
 
     @Override
@@ -55,17 +64,26 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         itemRequest.setRequestor(user);
 
         return ItemRequestMapper.toResponseDto(
-            itemRequestRepository.save(itemRequest), UserMapper.toDto(user), new ArrayList<>());
+            itemRequestRepository.save(itemRequest), UserMapper.toDto(user), new ArrayList<>()
+        );
     }
 
     @Override
     public List<ItemRequestResponseDto> getAllRequests(PageRequest pageRequest, long userId) {
         checkAndReturnUser(userId);
 
-        return itemRequestRepository.findByRequestorIdNot(userId, pageRequest).stream().map(
-            itemRequest -> ItemRequestMapper.toResponseDto(itemRequestRepository.save(itemRequest),
-                UserMapper.toDto(itemRequest.getRequestor()), getItems(itemRequest.getId())
-            )).collect(Collectors.toList());
+        List<ItemRequest> itemRequests = itemRequestRepository.findByRequestorIdNot(userId, pageRequest);
+
+        Map<Long, List<ItemResponseDto>> itemsMap =
+            getItems(itemRequests.stream().map(ItemRequest::getId).collect(Collectors.toSet()));
+
+        return itemRequests.stream().map(
+            itemRequest -> ItemRequestMapper.toResponseDto(
+                itemRequest,
+                UserMapper.toDto(itemRequest.getRequestor()),
+                itemsMap.get(itemRequest.getId())
+            )
+        ).collect(Collectors.toList());
     }
 
     @Override
@@ -75,7 +93,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             .orElseThrow(() -> new NotFoundException(ItemRequestErrorMessage.NOT_FOUND));
 
         return ItemRequestMapper.toResponseDto(
-            itemRequest, UserMapper.toDto(itemRequest.getRequestor()), getItems(requestId));
+            itemRequest, UserMapper.toDto(itemRequest.getRequestor()), getItems(requestId)
+        );
     }
 
     private User checkAndReturnUser(long userId) {
@@ -87,5 +106,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return itemRepository.findByRequestIdOrderByRequestCreatedAsc(requestId).stream()
             .map(item -> ItemMapper.toResponseDto(item, UserMapper.toDto(item.getOwner())))
             .collect(Collectors.toList());
+    }
+
+    private Map<Long, List<ItemResponseDto>> getItems(Set<Long> requestIds) {
+        return itemRepository.findByRequestIdInOrderByRequestCreatedAsc(requestIds)
+            .stream()
+            .map(item -> ItemMapper.toResponseDto(item, UserMapper.toDto(item.getOwner())))
+            .collect(Collectors.groupingBy(ItemResponseDto::getRequestId));
     }
 }

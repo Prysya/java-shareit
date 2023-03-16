@@ -2,6 +2,7 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.comment.dto.CommentRequestDto;
@@ -27,7 +28,7 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping
-    public List<ItemResponseDto> getAllItems(
+    public ResponseEntity<List<ItemResponseDto>> getAllItems(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(defaultValue = "0")
         @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE)
@@ -36,42 +37,47 @@ public class ItemController {
         @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
         Integer size
     ) {
-        return itemService.getAllItems(userId, new AppPageRequest(from, size));
+        return ResponseEntity.ok(itemService.getAllItems(userId, new AppPageRequest(from, size)));
     }
 
     @GetMapping("/{itemId}")
-    public ItemResponseDto getItemById(
+    public ResponseEntity<ItemResponseDto> getItemById(
         @PathVariable Long itemId,
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
     ) {
-        return itemService.getItemById(itemId, userId);
+        return ResponseEntity.ok(itemService.getItemById(itemId, userId));
     }
 
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
-    public ItemResponseDto saveItem(
+    public ResponseEntity<ItemResponseDto> saveItem(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Validated(ItemRequestDto.New.class) @RequestBody ItemRequestDto itemRequestDto
     ) {
-        return itemService.saveItem(userId, itemRequestDto);
+        return new ResponseEntity<>(itemService.saveItem(userId, itemRequestDto), HttpStatus.CREATED);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemResponseDto updateItem(
+    public ResponseEntity<ItemResponseDto> updateItem(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Validated(ItemRequestDto.Update.class) @RequestBody ItemRequestDto itemRequestDto,
         @PathVariable Long itemId
     ) {
-        return itemService.updateItem(itemId, userId, itemRequestDto);
+        return ResponseEntity.ok(itemService.updateItem(itemId, userId, itemRequestDto));
     }
 
     @DeleteMapping("/{itemId}")
-    public void deleteItem(@RequestHeader(CustomHeaders.USER_ID_HEADER) long userId, @PathVariable Long itemId) {
+    public ResponseEntity<Void> deleteItem(
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
+        @PathVariable Long itemId
+    ) {
         itemService.deleteItem(userId, itemId);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping("/search")
-    public List<ItemResponseDto> searchAvailableItems(
+    public ResponseEntity<List<ItemResponseDto>> searchAvailableItems(
         @RequestParam String text,
         @RequestParam(defaultValue = "0")
         @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE)
@@ -80,16 +86,16 @@ public class ItemController {
         @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
         Integer size
     ) {
-        return itemService.searchAvailableItemsByText(text, new AppPageRequest(from, size));
+        return ResponseEntity.ok(itemService.searchAvailableItemsByText(text, new AppPageRequest(from, size)));
     }
 
     @PostMapping("/{itemId}/comment")
-    public CommentResponseDto addComment(
+    public ResponseEntity<CommentResponseDto> addComment(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @PathVariable long itemId,
         @Valid @RequestBody CommentRequestDto commentRequestDto
     ) {
-        return itemService.addComment(userId, itemId, commentRequestDto);
+        return ResponseEntity.ok(itemService.addComment(userId, itemId, commentRequestDto));
     }
 }
 

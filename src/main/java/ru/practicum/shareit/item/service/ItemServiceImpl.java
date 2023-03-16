@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+public
 class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
@@ -90,7 +91,7 @@ class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public ItemResponseDto updateItem(Long itemId, Long userId, ItemRequestDto itemResponseDto) {
+    public ItemResponseDto updateItem(Long itemId, Long userId, ItemRequestDto itemRequestDto) {
         User user = checkAndReturnUser(userId);
         Item oldItem = checkAndReturnItem(itemId);
 
@@ -100,9 +101,9 @@ class ItemServiceImpl implements ItemService {
             .id(itemId)
             .owner(oldItem.getOwner())
             .request(oldItem.getRequest())
-            .name(Objects.requireNonNullElse(itemResponseDto.getName(), oldItem.getName()))
-            .description(Objects.requireNonNullElse(itemResponseDto.getDescription(), oldItem.getDescription()))
-            .available(Objects.requireNonNullElse(itemResponseDto.getAvailable(), oldItem.getAvailable()))
+            .name(Objects.requireNonNullElse(itemRequestDto.getName(), oldItem.getName()))
+            .description(Objects.requireNonNullElse(itemRequestDto.getDescription(), oldItem.getDescription()))
+            .available(Objects.requireNonNullElse(itemRequestDto.getAvailable(), oldItem.getAvailable()))
             .build();
 
         itemRepository.save(updatedItem);
@@ -128,7 +129,7 @@ class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
 
-        return itemRepository.findItemsWithText(text, pageRequest).stream().map(item -> {
+        return itemRepository.findAvailableItemsWithText(text, pageRequest).stream().map(item -> {
             UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
 
             ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);

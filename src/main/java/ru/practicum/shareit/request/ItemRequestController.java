@@ -1,6 +1,8 @@
 package ru.practicum.shareit.request;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.common.AppPageRequest;
@@ -23,38 +25,34 @@ public class ItemRequestController {
     private final ItemRequestService itemRequestService;
 
     @GetMapping
-    public List<ItemRequestResponseDto> getAllOwnRequests(
+    public ResponseEntity<List<ItemRequestResponseDto>> getAllOwnRequests(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
     ) {
-        return itemRequestService.getAllOwnRequests(userId);
+        return ResponseEntity.ok(itemRequestService.getAllOwnRequests(userId));
     }
 
     @PostMapping
-    public ItemRequestResponseDto createNewRequest(
+    public ResponseEntity<ItemRequestResponseDto> createNewRequest(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Valid @RequestBody ItemRequestRequestDto itemRequestRequestDto
     ) {
-        return itemRequestService.createNewRequest(itemRequestRequestDto, userId);
+        return new ResponseEntity<>(
+            itemRequestService.createNewRequest(itemRequestRequestDto, userId), HttpStatus.CREATED);
     }
 
     @GetMapping("/all")
-    public List<ItemRequestResponseDto> getAllRequests(
+    public ResponseEntity<List<ItemRequestResponseDto>> getAllRequests(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
-        @RequestParam(defaultValue = "0")
-        @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE)
-        Integer from,
-        @RequestParam(defaultValue = "10")
-        @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
-        Integer size
+        @RequestParam(defaultValue = "0") @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE) Integer from,
+        @RequestParam(defaultValue = "10") @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE) Integer size
     ) {
-        return itemRequestService.getAllRequests(new AppPageRequest(from, size), userId);
+        return ResponseEntity.ok(itemRequestService.getAllRequests(new AppPageRequest(from, size), userId));
     }
 
     @GetMapping("/{requestId}")
-    public ItemRequestResponseDto getRequestById(
-        @PathVariable long requestId,
-        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
+    public ResponseEntity<ItemRequestResponseDto> getRequestById(
+        @PathVariable long requestId, @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
     ) {
-        return itemRequestService.getRequestById(requestId, userId);
+        return ResponseEntity.ok(itemRequestService.getRequestById(requestId, userId));
     }
 }
