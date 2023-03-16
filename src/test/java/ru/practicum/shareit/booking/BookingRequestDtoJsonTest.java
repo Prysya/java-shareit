@@ -35,13 +35,13 @@ class BookingRequestDtoJsonTest {
         assertThat(result).extractingJsonPathStringValue("$.start")
             .isEqualTo(bookingRequestDto.getStart().truncatedTo(ChronoUnit.SECONDS).toString());
         assertThat(result).extractingJsonPathStringValue("$.start")
-                .matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
+            .matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
         assertThat(result).extractingJsonPathStringValue("$.end")
             .isEqualTo(bookingRequestDto.getEnd().truncatedTo(ChronoUnit.SECONDS).toString());
         assertThat(result).extractingJsonPathStringValue("$.start")
             .matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$");
         assertThat(result).extractingJsonPathBooleanValue("$.available")
-                .isEqualTo(bookingRequestDto.getAvailable());
+            .isEqualTo(bookingRequestDto.getAvailable());
         assertThat(result).extractingJsonPathNumberValue("$.itemId")
             .isEqualTo(1);
     }

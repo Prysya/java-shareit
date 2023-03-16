@@ -91,10 +91,10 @@ class BookingControllerIT {
             .andExpect(status().isBadRequest())
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof BadRequestException))
             .andExpect(result -> assertEquals(
-                String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId),
-                Objects.requireNonNull(result.getResolvedException()).getMessage())
+                    String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId),
+                    Objects.requireNonNull(result.getResolvedException()).getMessage()
+                )
             );
-        ;
 
         verify(bookingService, never()).getBookingById(bookingId, userId);
     }

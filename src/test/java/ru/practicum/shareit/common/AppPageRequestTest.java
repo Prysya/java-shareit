@@ -3,7 +3,7 @@ package ru.practicum.shareit.common;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AppPageRequestTest {
 

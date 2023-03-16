@@ -49,7 +49,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             itemRequest -> ItemRequestMapper.toResponseDto(
                 itemRequest,
                 UserMapper.toDto(user),
-                itemsMap.get(itemRequest.getId())
+                itemsMap.getOrDefault(itemRequest.getId(), List.of())
             )).collect(Collectors.toList()
         );
     }
