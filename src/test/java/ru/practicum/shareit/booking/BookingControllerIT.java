@@ -11,17 +11,21 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.booking.constants.BookingErrorMessage;
 import ru.practicum.shareit.booking.constants.BookingState;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.common.AppPageRequest;
 import ru.practicum.shareit.constant.CustomHeaders;
+import ru.practicum.shareit.exception.BadRequestException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -84,7 +88,13 @@ class BookingControllerIT {
             .perform(
                 get(CONTROLLER_URL + "/{bookingId}", bookingId)
             )
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest())
+            .andExpect(result -> assertTrue(result.getResolvedException() instanceof BadRequestException))
+            .andExpect(result -> assertEquals(
+                String.format(BookingErrorMessage.BOOKING_NOT_FOUND, bookingId),
+                Objects.requireNonNull(result.getResolvedException()).getMessage())
+            );
+        ;
 
         verify(bookingService, never()).getBookingById(bookingId, userId);
     }

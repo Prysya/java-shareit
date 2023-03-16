@@ -14,7 +14,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.UnauthorizedException;
 
 import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
@@ -36,15 +35,6 @@ public class ErrorHandler {
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleBadRequest(final ConflictException e) {
-        String message = e.getMessage();
-
-        log.error(message);
-        return new ErrorResponse(message);
-    }
-
-    @ExceptionHandler(UnauthorizedException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ErrorResponse handleBadRequest(final UnauthorizedException e) {
         String message = e.getMessage();
 
         log.error(message);

@@ -1,12 +1,10 @@
 package ru.practicum.shareit.request.model;
 
 import lombok.*;
-import org.hibernate.Hibernate;
 import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
 @Builder
@@ -15,6 +13,7 @@ import java.util.Objects;
 @Getter
 @Table(name = "requests")
 @NoArgsConstructor
+@ToString
 public class ItemRequest {
     /**
      * Уникальный идентификатор запроса
@@ -38,21 +37,4 @@ public class ItemRequest {
     @ManyToOne
     @JoinColumn(name = "requestor_id")
     private User requestor;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
-            return false;
-        }
-        ItemRequest that = (ItemRequest) o;
-        return id != null && Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
 }
