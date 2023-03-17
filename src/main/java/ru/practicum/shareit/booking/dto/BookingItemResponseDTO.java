@@ -16,6 +16,6 @@ public class BookingItemResponseDTO {
     private Long id;
     private LocalDateTime start;
     private LocalDateTime end;
-    private long bookerId;
+    private Long bookerId;
     private BookingStatus status;
 }

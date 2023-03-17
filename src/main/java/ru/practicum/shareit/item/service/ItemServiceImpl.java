@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.constants.BookingStatus;
@@ -15,10 +16,14 @@ import ru.practicum.shareit.comment.repository.CommentRepository;
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.constants.ItemErrorMessage;
-import ru.practicum.shareit.item.dto.ItemDTO;
+import ru.practicum.shareit.item.dto.ItemRequestDto;
+import ru.practicum.shareit.item.dto.ItemResponseDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.constants.ItemRequestErrorMessage;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.constants.UserErrorMessage;
 import ru.practicum.shareit.user.dto.UserDTO;
 import ru.practicum.shareit.user.mapper.UserMapper;
@@ -26,64 +31,81 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+public
 class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
-    private final ItemMapper itemMapper;
-    private final UserMapper userMapper;
-    private final BookingMapper bookingMapper;
-    private final CommentMapper commentMapper;
+    private final ItemRequestRepository itemRequestRepository;
 
 
     @Override
-    public List<ItemDTO> getAllItems(Long userId) {
-        UserDTO userDTO = userMapper.toDto(checkAndReturnUser(userId));
-        List<Item> items = itemRepository.findByOwnerIdOrderByIdAsc(userId);
+    public List<ItemResponseDto> getAllItems(Long userId, PageRequest pageRequest) {
+        UserDTO userDTO = UserMapper.toDto(checkAndReturnUser(userId));
+        List<Item> items = itemRepository.findByOwnerIdOrderByIdAsc(userId, pageRequest);
+
+        Set<Long> ids = items.stream().map(Item::getId).collect(Collectors.toSet());
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(ids, userDTO.getId());
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(ids, userDTO.getId());
 
         return items.stream().map(item -> {
-            ItemDTO itemDTO = itemMapper.toDto(item, userDTO);
-            setBookingsToDTO(itemDTO, userDTO.getId());
-            setCommentsToDTO(itemDTO);
+            ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, userDTO);
+            setBookingsToDTO(
+                Optional.ofNullable(lastBookings.get(item.getId())),
+                Optional.ofNullable(nextBookings.get(item.getId())),
+                itemResponseDto
+            );
+            setCommentsToDTO(itemResponseDto);
 
-            return itemDTO;
+            return itemResponseDto;
         }).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public ItemDTO saveItem(Long userId, ItemDTO itemDTO) {
+    public ItemResponseDto saveItem(Long userId, ItemRequestDto itemRequestDto) {
         User user = checkAndReturnUser(userId);
-        Item item = itemMapper.toItem(itemDTO, user);
+        Item item = ItemMapper.toItem(itemRequestDto, user);
 
-        return itemMapper.toDto(itemRepository.save(item), userMapper.toDto(user));
+        if (Objects.nonNull(itemRequestDto.getRequestId())) {
+            ItemRequest request = checkAndReturnItemRequest(itemRequestDto.getRequestId());
+            item.setRequest(request);
+        }
+
+        return ItemMapper.toResponseDto(itemRepository.save(item), UserMapper.toDto(user));
     }
 
     @Override
-    public ItemDTO getItemById(Long itemId, Long requestUserId) {
+    public ItemResponseDto getItemById(Long itemId, Long requestUserId) {
         Item item = checkAndReturnItem(itemId);
 
-        UserDTO ownerDTO = userMapper.toDto(item.getOwner());
-        ItemDTO itemDTO = itemMapper.toDto(item, ownerDTO);
-        setBookingsToDTO(itemDTO, requestUserId);
-        setCommentsToDTO(itemDTO);
 
-        return itemDTO;
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(Set.of(itemId), requestUserId);
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(Set.of(itemId), requestUserId);
+
+        UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
+        ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
+        setBookingsToDTO(
+            Optional.ofNullable(lastBookings.get(item.getId())),
+            Optional.ofNullable(nextBookings.get(item.getId())),
+            itemResponseDto
+        );
+        setCommentsToDTO(itemResponseDto);
+
+        return itemResponseDto;
     }
 
     @Override
     @Transactional
-    public ItemDTO updateItem(Long itemId, Long userId, ItemDTO itemDTO) {
+    public ItemResponseDto updateItem(Long itemId, Long userId, ItemRequestDto itemRequestDto) {
         User user = checkAndReturnUser(userId);
         Item oldItem = checkAndReturnItem(itemId);
 
@@ -93,14 +115,14 @@ class ItemServiceImpl implements ItemService {
             .id(itemId)
             .owner(oldItem.getOwner())
             .request(oldItem.getRequest())
-            .name(Objects.requireNonNullElse(itemDTO.getName(), oldItem.getName()))
-            .description(Objects.requireNonNullElse(itemDTO.getDescription(), oldItem.getDescription()))
-            .available(Objects.requireNonNullElse(itemDTO.getAvailable(), oldItem.getAvailable()))
+            .name(Objects.requireNonNullElse(itemRequestDto.getName(), oldItem.getName()))
+            .description(Objects.requireNonNullElse(itemRequestDto.getDescription(), oldItem.getDescription()))
+            .available(Objects.requireNonNullElse(itemRequestDto.getAvailable(), oldItem.getAvailable()))
             .build();
 
         itemRepository.save(updatedItem);
 
-        return itemMapper.toDto(updatedItem, userMapper.toDto(user));
+        return ItemMapper.toResponseDto(updatedItem, UserMapper.toDto(user));
     }
 
     @Override
@@ -116,18 +138,28 @@ class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDTO> searchAvailableItemsByText(String text) {
+    public List<ItemResponseDto> searchAvailableItemsByText(Long userId, String text, PageRequest pageRequest) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
 
-        return itemRepository.findItemsWithText(text).stream().map(item -> {
-            UserDTO ownerDTO = userMapper.toDto(item.getOwner());
+        List<Item> items = itemRepository.findAvailableItemsWithText(text, pageRequest);
 
-            ItemDTO itemDTO = itemMapper.toDto(item, ownerDTO);
-            setBookingsToDTO(itemDTO, item.getOwner().getId());
+        Set<Long> ids = items.stream().map(Item::getId).collect(Collectors.toSet());
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(ids, userId);
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(ids, userId);
 
-            return itemDTO;
+        return items.stream().map(item -> {
+            UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
+
+            ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
+            setBookingsToDTO(
+                Optional.ofNullable(lastBookings.get(item.getId())),
+                Optional.ofNullable(nextBookings.get(item.getId())),
+                itemResponseDto
+            );
+
+            return itemResponseDto;
         }).collect(Collectors.toList());
     }
 
@@ -147,12 +179,12 @@ class ItemServiceImpl implements ItemService {
             throw new BadRequestException(ItemErrorMessage.COMMENT_ERROR);
         }
 
-        Comment comment = commentMapper.toComment(commentRequestDto);
+        Comment comment = CommentMapper.toComment(commentRequestDto);
         comment.setItem(item);
         comment.setAuthor(user);
         comment.setCreated(LocalDateTime.now());
 
-        return commentMapper.toResponseDto(commentRepository.save(comment), userMapper.toDto(user));
+        return CommentMapper.toResponseDto(commentRepository.save(comment), UserMapper.toDto(user));
     }
 
     /**
@@ -167,32 +199,40 @@ class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void setCommentsToDTO(ItemDTO itemDTO) {
-        List<Comment> comments = commentRepository.findByItemId(itemDTO.getId());
+    private void setCommentsToDTO(ItemResponseDto itemResponseDto) {
+        List<Comment> comments = commentRepository.findByItemId(itemResponseDto.getId());
 
-        itemDTO.setComments(comments.stream()
-            .map(comment -> commentMapper.toResponseDto(comment, userMapper.toDto(comment.getAuthor())))
+        itemResponseDto.setComments(comments.stream()
+            .map(comment -> CommentMapper.toResponseDto(comment, UserMapper.toDto(comment.getAuthor())))
             .collect(Collectors.toList()));
     }
 
-    private void setBookingsToDTO(ItemDTO itemDTO, Long requestUserId) {
-        if (itemDTO.getOwner().getId().equals(requestUserId)) {
-            List<Booking> bookings = bookingRepository.findByItemIdOrderByIdDesc(itemDTO.getId());
+    private void setBookingsToDTO(
+        Optional<List<Booking>> lastBookings, Optional<List<Booking>> nextBookings, ItemResponseDto itemResponseDto
+    ) {
 
+        itemResponseDto
+            .setLastBooking(lastBookings.flatMap(bookings -> Optional.ofNullable(bookings.get(0))
+                    .map(value -> BookingMapper.toItemResponseDto(value, UserMapper.toDto(value.getBooker()))))
+                .orElse(null));
 
-            Booking lastBooking =
-                bookings.stream().filter(booking -> !booking.getStatus().equals(BookingStatus.REJECTED))
-                    .filter(booking -> booking.getEnd().isBefore(LocalDateTime.now())).findFirst().orElse(null);
+        itemResponseDto
+            .setNextBooking(nextBookings.flatMap(bookings -> Optional.ofNullable(bookings.get(0))
+                    .map(value -> BookingMapper.toItemResponseDto(value, UserMapper.toDto(value.getBooker()))))
+                .orElse(null));
+    }
 
-            Booking nextBooking =
-                bookings.stream().filter(booking -> booking.getStatus().equals(BookingStatus.APPROVED))
-                    .filter(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst().orElse(null);
+    private Map<Long, List<Booking>> getAllLastBookingsByItemId(Set<Long> itemIds, Long userId) {
+        return bookingRepository.findByItemIdAndOwnerIdAndStartDateLessThenNowInOrderByIdDesc(
+                itemIds, userId, LocalDateTime.now()).stream()
+            .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
+    }
 
-            itemDTO.setLastBooking(Objects.isNull(lastBooking) ? null :
-                bookingMapper.toItemResponseDto(lastBooking, userMapper.toDto(lastBooking.getBooker())));
-            itemDTO.setNextBooking(Objects.isNull(nextBooking) ? null :
-                bookingMapper.toItemResponseDto(nextBooking, userMapper.toDto(nextBooking.getBooker())));
-        }
+    private Map<Long, List<Booking>> getAllNextBookingsByItemId(Set<Long> itemIds, Long userId) {
+        return bookingRepository.findByItemIdAndOwnerIdAndStartDateIsMoreThenNowInOrderByIdAsc(
+                itemIds, userId, LocalDateTime.now())
+            .stream()
+            .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
     }
 
     private User checkAndReturnUser(Long userId) {
@@ -203,5 +243,10 @@ class ItemServiceImpl implements ItemService {
     private Item checkAndReturnItem(Long itemId) {
         return itemRepository.findById(itemId)
             .orElseThrow(() -> new NotFoundException(String.format(ItemErrorMessage.NOT_FOUND, itemId)));
+    }
+
+    private ItemRequest checkAndReturnItemRequest(Long requestId) {
+        return itemRequestRepository.findById(requestId)
+            .orElseThrow(() -> new NotFoundException(ItemRequestErrorMessage.NOT_FOUND));
     }
 }
