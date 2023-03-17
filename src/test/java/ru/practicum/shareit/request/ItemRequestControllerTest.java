@@ -7,8 +7,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import ru.practicum.shareit.request.dto.ItemRequestRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestResponseDto;
 import ru.practicum.shareit.request.service.ItemRequestService;
@@ -40,10 +38,9 @@ class ItemRequestControllerTest {
         when(itemRequestService.getAllOwnRequests(userId))
             .thenReturn(requests);
 
-        ResponseEntity<List<ItemRequestResponseDto>> response = itemRequestController.getAllOwnRequests(userId);
+        List<ItemRequestResponseDto> response = itemRequestController.getAllOwnRequests(userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(requests, response.getBody());
+        assertEquals(requests, response);
     }
 
     @Test
@@ -55,11 +52,10 @@ class ItemRequestControllerTest {
         when(itemRequestService.createNewRequest(itemRequestRequestDto, userId))
             .thenReturn(itemRequestResponseDto);
 
-        ResponseEntity<ItemRequestResponseDto> response =
+        ItemRequestResponseDto response =
             itemRequestController.createNewRequest(userId, itemRequestRequestDto);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(itemRequestResponseDto, response.getBody());
+        assertEquals(itemRequestResponseDto, response);
     }
 
     @Test
@@ -71,10 +67,9 @@ class ItemRequestControllerTest {
         when(itemRequestService.getAllRequests(any(PageRequest.class), eq(userId)))
             .thenReturn(requests);
 
-        ResponseEntity<List<ItemRequestResponseDto>> response = itemRequestController.getAllRequests(userId, 0, 10);
+        List<ItemRequestResponseDto> response = itemRequestController.getAllRequests(userId, 0, 10);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(requests, response.getBody());
+        assertEquals(requests, response);
     }
 
     @Test
@@ -86,10 +81,9 @@ class ItemRequestControllerTest {
         when(itemRequestService.getRequestById(requestId, userId))
             .thenReturn(itemRequestResponseDto);
 
-        ResponseEntity<ItemRequestResponseDto> response =
+        ItemRequestResponseDto response =
             itemRequestController.getRequestById(requestId, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(itemRequestResponseDto, response.getBody());
+        assertEquals(itemRequestResponseDto, response);
     }
 }

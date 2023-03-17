@@ -6,8 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import ru.practicum.shareit.booking.constants.BookingState;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
@@ -38,10 +36,9 @@ class BookingControllerTest {
             .when(bookingService.createNewBooking(bookingRequestDto, userId))
             .thenReturn(bookingResponseDto);
 
-        ResponseEntity<BookingResponseDto> response = bookingController.createBooking(userId, bookingRequestDto);
+        BookingResponseDto response = bookingController.createBooking(userId, bookingRequestDto);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(bookingResponseDto, response.getBody());
+        assertEquals(bookingResponseDto, response);
     }
 
     @Test
@@ -54,10 +51,9 @@ class BookingControllerTest {
         Mockito
             .when(bookingService.updateBooking(bookingId, approved, userId))
             .thenReturn(bookingResponseDto);
-        ResponseEntity<BookingResponseDto> response = bookingController.updateBooking(bookingId, approved, userId);
+        BookingResponseDto response = bookingController.updateBooking(bookingId, approved, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(bookingResponseDto, response.getBody());
+        assertEquals(bookingResponseDto, response);
     }
 
     @Test
@@ -70,10 +66,9 @@ class BookingControllerTest {
             .when(bookingService.getBookingById(userId, bookingId))
             .thenReturn(bookingResponseDto);
 
-        ResponseEntity<BookingResponseDto> response = bookingController.getBookingById(userId, bookingId);
+        BookingResponseDto response = bookingController.getBookingById(userId, bookingId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(bookingResponseDto, response.getBody());
+        assertEquals(bookingResponseDto, response);
     }
 
     @Test
@@ -89,11 +84,10 @@ class BookingControllerTest {
             .when(bookingService.getCurrentUserBookings(bookingState, userId, appPageRequest))
             .thenReturn(boookingList);
 
-        ResponseEntity<List<BookingResponseDto>> response =
+        List<BookingResponseDto> response =
             bookingController.getCurrentUserBookings(userId, bookingState, 1, 1);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(boookingList, response.getBody());
+        assertEquals(boookingList, response);
     }
 
     @Test
@@ -109,10 +103,9 @@ class BookingControllerTest {
             .when(bookingService.getCurrentUserAllItemsBookings(bookingState, userId, appPageRequest))
             .thenReturn(boookingList);
 
-        ResponseEntity<List<BookingResponseDto>> response =
+        List<BookingResponseDto> response =
             bookingController.getCurrentUserAllItemsBookings(userId, bookingState, 1, 1);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(boookingList, response.getBody());
+        assertEquals(boookingList, response);
     }
 }

@@ -5,8 +5,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import ru.practicum.shareit.user.dto.UserDTO;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -14,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,10 +31,9 @@ class UserControllerTest {
         when(userService.getAllUsers())
             .thenReturn(usersList);
 
-        ResponseEntity<List<UserDTO>> response = userController.getAllUsers();
+        List<UserDTO> response = userController.getAllUsers();
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(usersList, response.getBody());
+        assertEquals(usersList, response);
     }
 
     @Test
@@ -45,10 +43,9 @@ class UserControllerTest {
 
         when(userService.getUserById(anyLong())).thenReturn(userDTO);
 
-        ResponseEntity<UserDTO> response = userController.getUserById(userId);
+        UserDTO response = userController.getUserById(userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(userDTO, response.getBody());
+        assertEquals(userDTO, response);
     }
 
     @Test
@@ -57,10 +54,9 @@ class UserControllerTest {
 
         when(userService.saveUser(userDTO)).thenReturn(userDTO);
 
-        ResponseEntity<UserDTO> response = userController.saveUser(userDTO);
+        UserDTO response = userController.saveUser(userDTO);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(userDTO, response.getBody());
+        assertEquals(userDTO, response);
     }
 
     @Test
@@ -70,18 +66,17 @@ class UserControllerTest {
 
         when(userService.updateUser(userId, userDTO)).thenReturn(userDTO);
 
-        ResponseEntity<UserDTO> response = userController.updateUser(userDTO, userId);
+        UserDTO response = userController.updateUser(userDTO, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(userDTO, response.getBody());
+        assertEquals(userDTO, response);
     }
 
     @Test
     void deleteUser_whenInvoked_thenResponseStatusOk() {
         long userId = 1L;
 
-        ResponseEntity<Void> response = userController.deleteUser(userId);
+        userController.deleteUser(userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(userService).deleteUser(anyLong());
     }
 }

@@ -34,7 +34,8 @@ class ErrorHandlerTest {
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest())
             .andExpect(result -> assertTrue(result.getResolvedException() instanceof BadRequestException))
-            .andExpect(result -> assertEquals("Bad request",
+            .andExpect(result -> assertEquals(
+                "Bad request",
                 Objects.requireNonNull(result.getResolvedException()).getMessage()
             ));
     }

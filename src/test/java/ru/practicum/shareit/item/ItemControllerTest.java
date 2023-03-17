@@ -6,8 +6,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import ru.practicum.shareit.comment.dto.CommentRequestDto;
 import ru.practicum.shareit.comment.dto.CommentResponseDto;
 import ru.practicum.shareit.common.AppPageRequest;
@@ -19,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,10 +40,9 @@ class ItemControllerTest {
         when(itemService.getAllItems(anyLong(), any(PageRequest.class)))
             .thenReturn(bookingList);
 
-        ResponseEntity<List<ItemResponseDto>> response = itemController.getAllItems(userId, DEFAULT_FROM, DEFAULT_SIZE);
+        List<ItemResponseDto> response = itemController.getAllItems(userId, DEFAULT_FROM, DEFAULT_SIZE);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(bookingList, response.getBody());
+        assertEquals(bookingList, response);
     }
 
     @Test
@@ -56,10 +54,9 @@ class ItemControllerTest {
         when(itemService.getItemById(anyLong(), anyLong()))
             .thenReturn(itemResponseDto);
 
-        ResponseEntity<ItemResponseDto> response = itemController.getItemById(itemId, userId);
+        ItemResponseDto response = itemController.getItemById(itemId, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(itemResponseDto, response.getBody());
+        assertEquals(itemResponseDto, response);
     }
 
     @Test
@@ -71,10 +68,9 @@ class ItemControllerTest {
         when(itemService.saveItem(anyLong(), any(ItemRequestDto.class)))
             .thenReturn(itemResponseDto);
 
-        ResponseEntity<ItemResponseDto> response = itemController.saveItem(itemId, itemRequestDto);
+        ItemResponseDto response = itemController.saveItem(itemId, itemRequestDto);
 
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(itemResponseDto, response.getBody());
+        assertEquals(itemResponseDto, response);
     }
 
     @Test
@@ -87,10 +83,9 @@ class ItemControllerTest {
         when(itemService.updateItem(anyLong(), anyLong(), any(ItemRequestDto.class)))
             .thenReturn(itemResponseDto);
 
-        ResponseEntity<ItemResponseDto> response = itemController.updateItem(itemId, itemRequestDto, userId);
+        ItemResponseDto response = itemController.updateItem(itemId, itemRequestDto, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(itemResponseDto, response.getBody());
+        assertEquals(itemResponseDto, response);
     }
 
     @Test
@@ -98,9 +93,9 @@ class ItemControllerTest {
         long itemId = 1L;
         long userId = 1L;
 
-        ResponseEntity<Void> response = itemController.deleteItem(itemId, userId);
+        itemController.deleteItem(itemId, userId);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(itemService).deleteItem(anyLong(), anyLong());
     }
 
     @Test
@@ -112,11 +107,10 @@ class ItemControllerTest {
         when(itemService.searchAvailableItemsByText(anyString(), any(AppPageRequest.class)))
             .thenReturn(list);
 
-        ResponseEntity<List<ItemResponseDto>> response =
+        List<ItemResponseDto> response =
             itemController.searchAvailableItems(text, DEFAULT_FROM, DEFAULT_SIZE);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(list, response.getBody());
+        assertEquals(list, response);
     }
 
     @Test
@@ -129,10 +123,9 @@ class ItemControllerTest {
         when(itemService.addComment(anyLong(), anyLong(), any(CommentRequestDto.class)))
             .thenReturn(commentResponseDto);
 
-        ResponseEntity<CommentResponseDto> response =
+        CommentResponseDto response =
             itemController.addComment(userId, itemId, commentRequestDto);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(commentResponseDto, response.getBody());
+        assertEquals(commentResponseDto, response);
     }
 }

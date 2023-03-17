@@ -2,7 +2,6 @@ package ru.practicum.shareit.request;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.common.AppPageRequest;
@@ -25,34 +24,34 @@ public class ItemRequestController {
     private final ItemRequestService itemRequestService;
 
     @GetMapping
-    public ResponseEntity<List<ItemRequestResponseDto>> getAllOwnRequests(
+    public List<ItemRequestResponseDto> getAllOwnRequests(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
     ) {
-        return ResponseEntity.ok(itemRequestService.getAllOwnRequests(userId));
+        return itemRequestService.getAllOwnRequests(userId);
     }
 
     @PostMapping
-    public ResponseEntity<ItemRequestResponseDto> createNewRequest(
+    @ResponseStatus(HttpStatus.CREATED)
+    public ItemRequestResponseDto createNewRequest(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @Valid @RequestBody ItemRequestRequestDto itemRequestRequestDto
     ) {
-        return new ResponseEntity<>(
-            itemRequestService.createNewRequest(itemRequestRequestDto, userId), HttpStatus.CREATED);
+        return itemRequestService.createNewRequest(itemRequestRequestDto, userId);
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ItemRequestResponseDto>> getAllRequests(
+    public List<ItemRequestResponseDto> getAllRequests(
         @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(defaultValue = "0") @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE) Integer from,
         @RequestParam(defaultValue = "10") @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE) Integer size
     ) {
-        return ResponseEntity.ok(itemRequestService.getAllRequests(new AppPageRequest(from, size), userId));
+        return itemRequestService.getAllRequests(new AppPageRequest(from, size), userId);
     }
 
     @GetMapping("/{requestId}")
-    public ResponseEntity<ItemRequestResponseDto> getRequestById(
+    public ItemRequestResponseDto getRequestById(
         @PathVariable long requestId, @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId
     ) {
-        return ResponseEntity.ok(itemRequestService.getRequestById(requestId, userId));
+        return itemRequestService.getRequestById(requestId, userId);
     }
 }
