@@ -31,9 +31,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,9 +52,17 @@ class ItemServiceImpl implements ItemService {
         UserDTO userDTO = UserMapper.toDto(checkAndReturnUser(userId));
         List<Item> items = itemRepository.findByOwnerIdOrderByIdAsc(userId, pageRequest);
 
+        Set<Long> ids = items.stream().map(Item::getId).collect(Collectors.toSet());
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(ids, userDTO.getId());
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(ids, userDTO.getId());
+
         return items.stream().map(item -> {
             ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, userDTO);
-            setBookingsToDTO(itemResponseDto, userDTO.getId());
+            setBookingsToDTO(
+                Optional.ofNullable(lastBookings.get(item.getId())),
+                Optional.ofNullable(nextBookings.get(item.getId())),
+                itemResponseDto
+            );
             setCommentsToDTO(itemResponseDto);
 
             return itemResponseDto;
@@ -81,9 +87,17 @@ class ItemServiceImpl implements ItemService {
     public ItemResponseDto getItemById(Long itemId, Long requestUserId) {
         Item item = checkAndReturnItem(itemId);
 
+
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(Set.of(itemId), requestUserId);
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(Set.of(itemId), requestUserId);
+
         UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
         ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
-        setBookingsToDTO(itemResponseDto, requestUserId);
+        setBookingsToDTO(
+            Optional.ofNullable(lastBookings.get(item.getId())),
+            Optional.ofNullable(nextBookings.get(item.getId())),
+            itemResponseDto
+        );
         setCommentsToDTO(itemResponseDto);
 
         return itemResponseDto;
@@ -124,16 +138,26 @@ class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemResponseDto> searchAvailableItemsByText(String text, PageRequest pageRequest) {
+    public List<ItemResponseDto> searchAvailableItemsByText(Long userId, String text, PageRequest pageRequest) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
 
-        return itemRepository.findAvailableItemsWithText(text, pageRequest).stream().map(item -> {
+        List<Item> items = itemRepository.findAvailableItemsWithText(text, pageRequest);
+
+        Set<Long> ids = items.stream().map(Item::getId).collect(Collectors.toSet());
+        Map<Long, List<Booking>> lastBookings = getAllLastBookingsByItemId(ids, userId);
+        Map<Long, List<Booking>> nextBookings = getAllNextBookingsByItemId(ids, userId);
+
+        return items.stream().map(item -> {
             UserDTO ownerDTO = UserMapper.toDto(item.getOwner());
 
             ItemResponseDto itemResponseDto = ItemMapper.toResponseDto(item, ownerDTO);
-            setBookingsToDTO(itemResponseDto, item.getOwner().getId());
+            setBookingsToDTO(
+                Optional.ofNullable(lastBookings.get(item.getId())),
+                Optional.ofNullable(nextBookings.get(item.getId())),
+                itemResponseDto
+            );
 
             return itemResponseDto;
         }).collect(Collectors.toList());
@@ -183,23 +207,32 @@ class ItemServiceImpl implements ItemService {
             .collect(Collectors.toList()));
     }
 
-    private void setBookingsToDTO(ItemResponseDto itemResponseDto, Long requestUserId) {
-        if (itemResponseDto.getOwner().getId().equals(requestUserId)) {
-            List<Booking> bookings = bookingRepository.findByItemIdOrderByIdDesc(itemResponseDto.getId());
+    private void setBookingsToDTO(
+        Optional<List<Booking>> lastBookings, Optional<List<Booking>> nextBookings, ItemResponseDto itemResponseDto
+    ) {
 
-            Booking lastBooking =
-                bookings.stream().filter(booking -> !booking.getStatus().equals(BookingStatus.REJECTED))
-                    .filter(booking -> booking.getStart().isBefore(LocalDateTime.now())).findFirst().orElse(null);
+        itemResponseDto
+            .setLastBooking(lastBookings.flatMap(bookings -> Optional.ofNullable(bookings.get(0))
+                    .map(value -> BookingMapper.toItemResponseDto(value, UserMapper.toDto(value.getBooker()))))
+                .orElse(null));
 
-            Booking nextBooking =
-                bookings.stream().filter(booking -> booking.getStatus().equals(BookingStatus.APPROVED))
-                    .filter(booking -> booking.getStart().isAfter(LocalDateTime.now())).findFirst().orElse(null);
+        itemResponseDto
+            .setNextBooking(nextBookings.flatMap(bookings -> Optional.ofNullable(bookings.get(0))
+                    .map(value -> BookingMapper.toItemResponseDto(value, UserMapper.toDto(value.getBooker()))))
+                .orElse(null));
+    }
 
-            itemResponseDto.setLastBooking(Objects.isNull(lastBooking) ? null :
-                BookingMapper.toItemResponseDto(lastBooking, UserMapper.toDto(lastBooking.getBooker())));
-            itemResponseDto.setNextBooking(Objects.isNull(nextBooking) ? null :
-                BookingMapper.toItemResponseDto(nextBooking, UserMapper.toDto(nextBooking.getBooker())));
-        }
+    private Map<Long, List<Booking>> getAllLastBookingsByItemId(Set<Long> itemIds, Long userId) {
+        return bookingRepository.findByItemIdAndOwnerIdAndStartDateLessThenNowInOrderByIdDesc(
+                itemIds, userId, LocalDateTime.now()).stream()
+            .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
+    }
+
+    private Map<Long, List<Booking>> getAllNextBookingsByItemId(Set<Long> itemIds, Long userId) {
+        return bookingRepository.findByItemIdAndOwnerIdAndStartDateIsMoreThenNowInOrderByIdAsc(
+                itemIds, userId, LocalDateTime.now())
+            .stream()
+            .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
     }
 
     private User checkAndReturnUser(Long userId) {

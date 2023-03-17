@@ -25,7 +25,6 @@ class ItemControllerTest {
 
     private static final int DEFAULT_FROM = 0;
     private static final int DEFAULT_SIZE = 10;
-    private final AppPageRequest defaultAppPageRequest = new AppPageRequest(DEFAULT_FROM, DEFAULT_SIZE);
     @InjectMocks
     private ItemController itemController;
     @Mock
@@ -100,15 +99,16 @@ class ItemControllerTest {
 
     @Test
     void searchAvailableItems_whenInvoked_thenResponseStatusOkAndItemsListInBody() {
+        long itemId = 1L;
         String text = "text";
         ItemResponseDto itemResponseDto = ItemResponseDto.builder().build();
         List<ItemResponseDto> list = List.of(itemResponseDto);
 
-        when(itemService.searchAvailableItemsByText(anyString(), any(AppPageRequest.class)))
+        when(itemService.searchAvailableItemsByText(anyLong(), anyString(), any(AppPageRequest.class)))
             .thenReturn(list);
 
         List<ItemResponseDto> response =
-            itemController.searchAvailableItems(text, DEFAULT_FROM, DEFAULT_SIZE);
+            itemController.searchAvailableItems(text, itemId, DEFAULT_FROM, DEFAULT_SIZE);
 
         assertEquals(list, response);
     }

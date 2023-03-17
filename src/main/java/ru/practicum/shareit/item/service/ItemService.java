@@ -19,7 +19,7 @@ public interface ItemService {
 
     void deleteItem(Long userId, Long itemId);
 
-    List<ItemResponseDto> searchAvailableItemsByText(String text, PageRequest pageRequest);
+    List<ItemResponseDto> searchAvailableItemsByText(Long userId, String text, PageRequest pageRequest);
 
     CommentResponseDto addComment(Long userId, Long itemId, CommentRequestDto commentRequestDto);
 }

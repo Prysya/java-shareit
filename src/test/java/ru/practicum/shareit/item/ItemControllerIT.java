@@ -318,51 +318,58 @@ class ItemControllerIT {
     @SneakyThrows
     void searchAvailableItems_whenPaginationWithDefaultValues_thenStatusIsOk() {
         String text = "text";
+        long userId = 1L;
 
         mockMvc
             .perform(
                 get(CONTROLLER_URL + "/search")
                     .param("text", text)
+                    .header(CustomHeaders.USER_ID_HEADER, userId)
             )
             .andExpect(status().isOk());
 
-        verify(itemService).searchAvailableItemsByText(eq(text), any(AppPageRequest.class));
+        verify(itemService).searchAvailableItemsByText(eq(userId), eq(text), any(AppPageRequest.class));
     }
 
     @Test
     @SneakyThrows
     void searchAvailableItems_whenUSizeIsPresented_thenStatusIsOk() {
+        long userId = 1L;
         int size = 20;
         String text = "text";
 
         mockMvc
             .perform(
                 get(CONTROLLER_URL + "/search")
+                    .header(CustomHeaders.USER_ID_HEADER, userId)
                     .param("size", String.valueOf(size))
                     .param(text, text)
             )
             .andExpect(status().isOk());
 
-        verify(itemService).searchAvailableItemsByText(text, new AppPageRequest(DEFAULT_FROM, size));
+        verify(itemService).searchAvailableItemsByText(userId, text, new AppPageRequest(DEFAULT_FROM, size));
     }
 
     @Test
     @SneakyThrows
     void searchAvailableItems_whenFromIsPresented_thenStatusIsOk() {
+        long userId = 1L;
         int from = 2;
         String text = "text";
 
-        when(itemService.searchAvailableItemsByText(eq(text), any(AppPageRequest.class))).thenReturn(List.of());
+        when(itemService.searchAvailableItemsByText(anyLong(), eq(text), any(AppPageRequest.class))).thenReturn(
+            List.of());
 
         mockMvc
             .perform(
                 get(CONTROLLER_URL + "/search")
+                    .header(CustomHeaders.USER_ID_HEADER, userId)
                     .param("from", String.valueOf(from))
                     .param(text, text)
             )
             .andExpect(status().isOk());
 
-        verify(itemService).searchAvailableItemsByText(text, new AppPageRequest(from, DEFAULT_SIZE));
+        verify(itemService).searchAvailableItemsByText(userId, text, new AppPageRequest(from, DEFAULT_SIZE));
     }
 
     @Test
@@ -373,12 +380,13 @@ class ItemControllerIT {
 
         mockMvc.perform(
                 get(CONTROLLER_URL + "/search")
+                    .header(CustomHeaders.USER_ID_HEADER, 1L)
                     .param("from", String.valueOf(from))
                     .param("text", text)
             )
             .andExpect(status().isBadRequest());
 
-        verify(itemService, never()).searchAvailableItemsByText(anyString(), any(AppPageRequest.class));
+        verify(itemService, never()).searchAvailableItemsByText(anyLong(), anyString(), any(AppPageRequest.class));
 
     }
 
@@ -390,12 +398,13 @@ class ItemControllerIT {
 
         mockMvc.perform(
                 get(CONTROLLER_URL + "/search")
+                    .header(CustomHeaders.USER_ID_HEADER, 1L)
                     .param("size", String.valueOf(size))
                     .param("text", text)
             )
             .andExpect(status().isBadRequest());
 
-        verify(itemService, never()).searchAvailableItemsByText(eq(text), any(AppPageRequest.class));
+        verify(itemService, never()).searchAvailableItemsByText(anyLong(), eq(text), any(AppPageRequest.class));
     }
 
     /**

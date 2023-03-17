@@ -78,9 +78,7 @@ class ItemServiceImplTest {
         long userId = 2L;
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> {
-            itemService.getAllItems(userId, defaultAppPageRequest);
-        });
+        assertThrows(NotFoundException.class, () -> itemService.getAllItems(userId, defaultAppPageRequest));
 
         verify(itemRepository, never()).findByOwnerIdOrderByIdAsc(eq(userId), any(AppPageRequest.class));
     }
@@ -130,9 +128,7 @@ class ItemServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(basicUser));
         when(itemRequestRepository.findById(requestId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> {
-            itemService.saveItem(userId, itemRequestDtoWithRequestId);
-        });
+        assertThrows(NotFoundException.class, () -> itemService.saveItem(userId, itemRequestDtoWithRequestId));
 
         verify(itemRepository, never()).save(any(Item.class));
     }
@@ -266,9 +262,7 @@ class ItemServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(basicUser));
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(basicItem));
 
-        assertThrows(NotFoundException.class, () -> {
-            itemService.updateItem(itemId, userId, newItem);
-        });
+        assertThrows(NotFoundException.class, () -> itemService.updateItem(itemId, userId, newItem));
 
         verify(itemRepository, never()).save(any(Item.class));
     }
@@ -294,7 +288,8 @@ class ItemServiceImplTest {
      */
     @Test
     void searchAvailableItemsByText_whenTextIsBlank_thenReturnEmptyList() {
-        List<ItemResponseDto> list = itemService.searchAvailableItemsByText("", defaultAppPageRequest);
+        long userId = basicUser.getId();
+        List<ItemResponseDto> list = itemService.searchAvailableItemsByText(userId, "", defaultAppPageRequest);
 
         assertTrue(list.isEmpty());
         verify(itemRepository, never()).findAvailableItemsWithText(anyString(), any(AppPageRequest.class));
@@ -303,10 +298,11 @@ class ItemServiceImplTest {
     @Test
     void searchAvailableItemsByText_whenTextIsNotBlank_thenReturnListOfItems() {
         String text = "text";
+        long userId = basicUser.getId();
 
         when(itemRepository.findAvailableItemsWithText(text, defaultAppPageRequest)).thenReturn(List.of(basicItem));
 
-        List<ItemResponseDto> list = itemService.searchAvailableItemsByText(text, defaultAppPageRequest);
+        List<ItemResponseDto> list = itemService.searchAvailableItemsByText(userId, text, defaultAppPageRequest);
 
         assertEquals(1, list.size());
         assertEquals(basicItemResponse, list.get(0));

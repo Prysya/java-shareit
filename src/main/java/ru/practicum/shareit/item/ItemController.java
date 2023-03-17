@@ -76,6 +76,7 @@ public class ItemController {
     @GetMapping("/search")
     public List<ItemResponseDto> searchAvailableItems(
         @RequestParam String text,
+        @RequestHeader(CustomHeaders.USER_ID_HEADER) long userId,
         @RequestParam(defaultValue = "0")
         @PositiveOrZero(message = AppErrorMessage.PAGE_IS_NOT_POSITIVE)
         Integer from,
@@ -83,7 +84,7 @@ public class ItemController {
         @Positive(message = AppErrorMessage.SIZE_IS_NOT_POSITIVE)
         Integer size
     ) {
-        return itemService.searchAvailableItemsByText(text, new AppPageRequest(from, size));
+        return itemService.searchAvailableItemsByText(userId, text, new AppPageRequest(from, size));
     }
 
     @PostMapping("/{itemId}/comment")

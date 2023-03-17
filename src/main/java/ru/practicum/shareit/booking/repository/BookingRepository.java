@@ -7,9 +7,22 @@ import ru.practicum.shareit.booking.constants.BookingStatus;
 import ru.practicum.shareit.booking.model.Booking;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+    @Query("select b from Booking b where b.item.id in ?1 and b.item.owner.id = ?2 and b.status != 'REJECTED'" +
+        " and b.start < ?3 order by b.start desc")
+    List<Booking> findByItemIdAndOwnerIdAndStartDateLessThenNowInOrderByIdDesc(
+        Collection<Long> ids, Long ownerId, LocalDateTime time
+    );
+
+    @Query("select b from Booking b where b.item.id in ?1 and b.item.owner.id = ?2 and b.status != 'REJECTED'" +
+        " and b.start > ?3 order by b.start")
+    List<Booking> findByItemIdAndOwnerIdAndStartDateIsMoreThenNowInOrderByIdAsc(
+        Collection<Long> ids, Long ownerId, LocalDateTime time
+    );
+
     @Query("select b from Booking b where b.booker.id = ?1 order by b.start DESC")
     List<Booking> findAllBookingsByBookerId(Long bookerId, Pageable pageable);
 
