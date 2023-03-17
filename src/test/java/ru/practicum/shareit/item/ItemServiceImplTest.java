@@ -190,22 +190,40 @@ class ItemServiceImplTest {
         long itemId = 1L;
         long userId = 1L;
         User booker = User.builder().id(3L).build();
-        List<Booking> bookings = List.of(
-            Booking.builder().status(BookingStatus.REJECTED).booker(booker).start(LocalDateTime.now().plusDays(1))
-                .end(LocalDateTime.now().plusDays(2)).build(),
-            Booking.builder().status(BookingStatus.APPROVED).booker(booker).start(LocalDateTime.now().plusDays(1))
-                .end(LocalDateTime.now().plusDays(2)).build(),
-            Booking.builder().status(BookingStatus.APPROVED).booker(booker).start(LocalDateTime.now().minusDays(1))
+        Item item = Item.builder().id(itemId).build();
+        List<Booking> lastBookings = List.of(
+            Booking.builder().id(1L).item(item).status(BookingStatus.APPROVED).booker(booker)
+                .start(LocalDateTime.now().minusDays(1))
+                .end(LocalDateTime.now().plusDays(2)).build()
+        );
+
+        List<Booking> nextBookings = List.of(
+            Booking.builder().id(1L).item(item).status(BookingStatus.APPROVED).booker(booker)
+                .start(LocalDateTime.now().plusDays(1))
                 .end(LocalDateTime.now().plusDays(2)).build()
         );
 
         when(itemRepository.findById(itemId)).thenReturn(Optional.of(basicItem));
-        when(bookingRepository.findByItemIdOrderByIdDesc(anyLong())).thenReturn(bookings);
+        when(
+            bookingRepository.findByItemIdAndOwnerIdAndStartDateLessThenNowInOrderByIdDesc(anySet(), anyLong(),
+                any(LocalDateTime.class)
+            )).thenReturn(lastBookings);
+        when(bookingRepository.findByItemIdAndOwnerIdAndStartDateIsMoreThenNowInOrderByIdAsc(
+            anySet(),
+            anyLong(),
+            any(LocalDateTime.class)
+        )).thenReturn(nextBookings);
 
-        ItemResponseDto item = itemService.getItemById(itemId, userId);
+        ItemResponseDto itemResponse = itemService.getItemById(itemId, userId);
 
-        assertEquals(BookingMapper.toItemResponseDto(bookings.get(1), UserMapper.toDto(booker)), item.getNextBooking());
-        assertEquals(BookingMapper.toItemResponseDto(bookings.get(2), UserMapper.toDto(booker)), item.getLastBooking());
+        assertEquals(
+            BookingMapper.toItemResponseDto(nextBookings.get(0), UserMapper.toDto(booker)),
+            itemResponse.getNextBooking()
+        );
+        assertEquals(
+            BookingMapper.toItemResponseDto(lastBookings.get(0), UserMapper.toDto(booker)),
+            itemResponse.getLastBooking()
+        );
     }
 
 
