@@ -16,9 +16,4 @@ public class ExceptionController {
     public void getConflictException() {
         throw new ConflictException("Conflict");
     }
-
-    @GetMapping("/exception/throw")
-    public void getException() throws Exception {
-        throw new Exception("error");
-    }
 }
