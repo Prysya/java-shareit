@@ -9,13 +9,9 @@ import ru.practicum.shareit.booking.constants.BookingState;
 import ru.practicum.shareit.booking.constants.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingRequestDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
-import ru.practicum.shareit.booking.exception.OutOfStateInStrategyException;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
-import ru.practicum.shareit.booking.strategy.BookingParams;
-import ru.practicum.shareit.booking.strategy.get_bookings.BookingsSearch;
-import ru.practicum.shareit.booking.strategy.get_owner_bookings.OwnerBookingsSearch;
 import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.item.constants.ItemErrorMessage;
@@ -27,10 +23,8 @@ import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import javax.annotation.PostConstruct;
-import java.util.EnumMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,25 +34,6 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
-    private final List<BookingsSearch> bookingsSearches;
-    private final List<OwnerBookingsSearch> ownerBookingsSearches;
-    private final EnumMap<BookingState, BookingsSearch> bookingSearchesMap = new EnumMap<>(BookingState.class);
-    private final EnumMap<BookingState, OwnerBookingsSearch> ownerBookingSearchesMap = new EnumMap<>(BookingState.class);
-
-    @PostConstruct
-    void init() {
-        bookingsSearches.forEach(
-            bookingsSearch -> bookingSearchesMap.put(
-                bookingsSearch.getState(),
-                bookingsSearch
-            ));
-        ownerBookingsSearches.forEach(
-            ownerBookingsSearch -> ownerBookingSearchesMap.put(
-                ownerBookingsSearch.getState(),
-                ownerBookingsSearch
-            ));
-    }
-
 
     @Override
     @Transactional
@@ -126,14 +101,32 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponseDto> getBookings(BookingState state, long userId, PageRequest pageRequest) {
         checkAndReturnUser(userId);
 
-        BookingsSearch bookingsSearch = bookingSearchesMap.get(state);
+        LocalDateTime currentTime = LocalDateTime.now();
 
-        if (Objects.isNull(bookingsSearch)) {
-            throw new OutOfStateInStrategyException("bookingsSearch", state);
+        List<Booking> bookings;
+
+        switch (state) {
+            case CURRENT:
+                bookings = bookingRepository.findCurrentBookingsByBookerId(userId, currentTime, pageRequest);
+                break;
+            case PAST:
+                bookings = bookingRepository.findPastBookingsByBookerId(userId, currentTime, pageRequest);
+                break;
+            case FUTURE:
+                bookings = bookingRepository.findFutureBookingsByBookerId(userId, currentTime, pageRequest);
+                break;
+            case WAITING:
+                bookings =
+                    bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.WAITING, pageRequest);
+                break;
+            case REJECTED:
+                bookings =
+                    bookingRepository.findBookingsByBookerIdAndStatus(userId, BookingStatus.REJECTED, pageRequest);
+                break;
+            case ALL:
+            default:
+                bookings = bookingRepository.findAllBookingsByBookerId(userId, pageRequest);
         }
-
-        List<Booking> bookings = bookingsSearch.search(new BookingParams(userId, pageRequest));
-
         return mapBookingToDTO(bookings);
     }
 
@@ -141,16 +134,34 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponseDto> getOwnerBookings(
         BookingState state, long ownerId, PageRequest pageRequest
     ) {
+
         checkAndReturnUser(ownerId);
+        LocalDateTime currentTime = LocalDateTime.now();
 
-        OwnerBookingsSearch ownerBookingsSearch = ownerBookingSearchesMap.get(state);
+        List<Booking> bookings;
 
-        if (Objects.isNull(ownerBookingsSearch)) {
-            throw new OutOfStateInStrategyException("ownerBookingsSearch", state);
+        switch (state) {
+            case CURRENT:
+                bookings = bookingRepository.findCurrentBookingsByOwnerId(ownerId, currentTime, pageRequest);
+                break;
+            case PAST:
+                bookings = bookingRepository.findPastBookingsByOwnerId(ownerId, currentTime, pageRequest);
+                break;
+            case FUTURE:
+                bookings = bookingRepository.findFutureBookingsByOwnerId(ownerId, currentTime, pageRequest);
+                break;
+            case WAITING:
+                bookings =
+                    bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.WAITING, pageRequest);
+                break;
+            case REJECTED:
+                bookings =
+                    bookingRepository.findBookingsByOwnerIdAndStatus(ownerId, BookingStatus.REJECTED, pageRequest);
+                break;
+            case ALL:
+            default:
+                bookings = bookingRepository.findAllBookingsByOwnerId(ownerId, pageRequest);
         }
-
-        List<Booking> bookings = ownerBookingsSearch.search(new BookingParams(ownerId, pageRequest));
-
         return mapBookingToDTO(bookings);
     }
 

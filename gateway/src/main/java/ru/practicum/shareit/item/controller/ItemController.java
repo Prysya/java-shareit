@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.comment.dto.CommentRequestDto;
 import ru.practicum.shareit.constant.AppErrorMessage;
 import ru.practicum.shareit.constant.CustomHeaders;
+import ru.practicum.shareit.item.client.ItemClient;
 import ru.practicum.shareit.item.dto.ItemRequestDto;
 
 import javax.validation.Valid;
